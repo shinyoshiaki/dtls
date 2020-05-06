@@ -1,29 +1,6 @@
 "use strict";
 
-const dtls = require("./src");
-
-const { spawn } = require("child_process");
-
-// const args = [
-//   "s_server",
-//   "-cert",
-//   "./assets/cert.pem",
-//   "-key",
-//   "./assets/key.pem",
-//   "-dtls1_2",
-//   "-accept",
-//   "127.0.0.1:56859",
-//   "-debug",
-//   "-msg",
-// ];
-
-// const server = spawn("openssl", args);
-// server.stdout.setEncoding("ascii");
-// server.stdout.on("data", (data) => {
-//   if (data.includes("### node->openssl")) {
-//     server.stdin.write("### openssl->node\n");
-//   }
-// });
+import * as dtls from "./src";
 
 setTimeout(() => {
   const socket = dtls.connect({

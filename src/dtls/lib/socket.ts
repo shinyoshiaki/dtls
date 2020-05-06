@@ -1,6 +1,7 @@
 "use strict";
 
-const { Duplex, pipeline } = require("readable-stream");
+import { Duplex, pipeline } from "readable-stream";
+import { toCipherSuite } from "../utils/cipher-suite";
 const unicast = require("unicast");
 const isDtls = require("is-dtls");
 const streamfilter = require("streamfilter");
@@ -13,25 +14,38 @@ const Defragmentation = require("../filter/defragmentation");
 const Reordering = require("../filter/reordering");
 const x509 = require("@fidm/x509");
 const { duplex: isDuplexStream } = require("is-stream");
-const { toCipherSuite } = require("../utils/cipher-suite");
-
-const _session = Symbol("_session");
-const _queue = Symbol("_queue");
-const _protocol = Symbol("_protocol");
-const _socket = Symbol("_socket");
-const _timeout = Symbol("_timeout");
-const _onTimeout = Symbol("_onTimeout");
-const _resetTimer = Symbol("_resetTimer");
 
 const DTLS_MAX_MTU = 1420; // 1500 - IP/UDP/DTLS headers
 const DTLS_MIN_MTU = 100;
 
-const isString = (str) => typeof str === "string";
+const isString = (str: any) => typeof str === "string";
+
+type Options = Partial<{
+  socket: any;
+  extendedMasterSecret: boolean;
+  certificate: Buffer;
+  certificatePrivateKey: Buffer;
+  alpn: string;
+  pskIdentity: Buffer;
+  pskSecret: Buffer;
+  ignorePSKIdentityHint: boolean;
+  cipherSuites: number[];
+}> & {
+  maxHandshakeRetransmissions: number;
+  remoteAddress: string;
+  type: string;
+  remotePort: number;
+};
 
 /**
  * DTLS socket.
  */
 class Socket extends Duplex {
+  private session = new ClientSession();
+  private queue: any[] = [];
+  private protocol?: any;
+  private socket?: any;
+  private timeout?: any;
   /**
    * @class Socket
    * @param {Object} options
@@ -46,33 +60,30 @@ class Socket extends Duplex {
    * @param {boolean} [options.ignorePSKIdentityHint]
    * @param {number[]} [options.cipherSuites]
    */
-  constructor(options = {}) {
+  constructor(options: Options = {} as any) {
     super({ objectMode: false, decodeStrings: false, allowHalfOpen: true });
 
     const { socket } = options;
 
-    const session = new ClientSession();
-    const protocol = new ProtocolReader(session);
-    const writer = new Sender(session);
-    const decoder = new Decoder(session);
+    const protocol = new ProtocolReader(this.session);
+    const writer = new Sender(this.session);
+    const decoder = new Decoder(this.session);
     const defrag = new Defragmentation();
-    const reorder = new Reordering(session);
+    const reorder = new Reordering(this.session);
 
     // Disable Extended Master Secret Extension, RFC7627
     if (options.extendedMasterSecret === false) {
-      session.extendedMasterSecret = false;
-    }
-
-    // Set up server certificate verify callback.
-    if (typeof options.checkServerIdentity === "function") {
-      session.serverCertificateVerifyCallback = options.checkServerIdentity;
+      this.session.extendedMasterSecret = false;
     }
 
     if (Buffer.isBuffer(options.certificate)) {
-      session.clientCertificate = x509.Certificate.fromPEM(options.certificate);
+      this.session.clientCertificate = x509.Certificate.fromPEM(
+        options.certificate
+      );
 
       if (options.certificatePrivateKey !== undefined) {
-        session.clientCertificatePrivateKey = options.certificatePrivateKey;
+        this.session.clientCertificatePrivateKey =
+          options.certificatePrivateKey;
       } else {
         throw new Error("Expected private key");
       }
@@ -82,16 +93,16 @@ class Socket extends Duplex {
       Number.isSafeInteger(options.maxHandshakeRetransmissions) &&
       options.maxHandshakeRetransmissions > 0
     ) {
-      session.retransmitter.maxTries = options.maxHandshakeRetransmissions;
+      this.session.retransmitter.maxTries = options.maxHandshakeRetransmissions;
     }
 
     if (isString(options.alpn)) {
-      session.alpnProtocols.push(options.alpn);
+      this.session.alpnProtocols.push(options.alpn);
     }
 
     if (Array.isArray(options.alpn)) {
       if (options.alpn.every(isString)) {
-        session.alpnProtocols.push(...options.alpn);
+        this.session.alpnProtocols.push(...options.alpn);
       } else {
         throw new TypeError(
           "Argument `options.alpn` accept a string or an array of a strings."
@@ -102,23 +113,23 @@ class Socket extends Duplex {
     // Entering PSK identities consisting of up to 128 printable Unicode characters.
     if (Buffer.isBuffer(options.pskIdentity)) {
       validatePSKIdentity(options.pskIdentity);
-      session.clientPSKIdentity = options.pskIdentity;
+      this.session.clientPSKIdentity = options.pskIdentity;
     } else if (typeof options.pskIdentity === "string") {
       validatePSKIdentity(options.pskIdentity);
-      session.clientPSKIdentity = Buffer.from(options.pskIdentity);
+      this.session.clientPSKIdentity = Buffer.from(options.pskIdentity);
     }
 
     // Entering PSKs up to 64 octets in length as ASCII strings.
     if (Buffer.isBuffer(options.pskSecret)) {
-      session.pskSecret = options.pskSecret;
-      validatePSKSecret(session.pskSecret);
+      this.session.pskSecret = options.pskSecret;
+      validatePSKSecret(this.session.pskSecret);
     } else if (typeof options.pskSecret === "string") {
-      session.pskSecret = Buffer.from(options.pskSecret, "ascii");
-      validatePSKSecret(session.pskSecret);
+      this.session.pskSecret = Buffer.from(options.pskSecret, "ascii");
+      validatePSKSecret(this.session.pskSecret);
     }
 
     if (options.ignorePSKIdentityHint === false) {
-      session.ignorePSKIdentityHint = false;
+      this.session.ignorePSKIdentityHint = false;
     }
 
     // Set up custom cipher suites.
@@ -134,14 +145,14 @@ class Socket extends Duplex {
         throw new Error("Invalid cipher suites list");
       }
 
-      session.cipherSuites = supportedCiphers;
+      this.session.cipherSuites = supportedCiphers;
     }
 
-    session.retransmitter.once("close", () => {
+    this.session.retransmitter.once("close", () => {
       this.emit("timeout");
     });
 
-    const onerror = (err) => {
+    const onerror = (err: any) => {
       if (err) {
         this.emit("error", err);
       }
@@ -151,35 +162,34 @@ class Socket extends Duplex {
     pipeline(writer, socket, onerror);
     pipeline(socket, isdtls, decoder, reorder, defrag, protocol, onerror);
 
-    this[_session] = session;
-    this[_queue] = [];
-    this[_protocol] = protocol;
-    this[_socket] = socket;
-    this[_timeout] = null;
+    this.queue = [];
+    this.protocol = protocol;
+    this.socket = socket;
+    this.timeout = null;
 
-    session.on("data", (packet) => {
-      this[_resetTimer]();
+    this.session.on("data", (packet: Buffer) => {
+      this.resetTimer();
       this.push(packet);
     });
 
-    session.once("handshake:finish", () => {
+    this.session.once("handshake:finish", () => {
       process.nextTick(() => this.emit("connect"));
 
-      this[_queue].forEach((data) => session.sendMessage(data));
-      this[_queue].length = 0;
+      this.queue.forEach((data) => this.session.sendMessage(data));
+      this.queue.length = 0;
 
-      session.retransmitter.removeAllListeners("close");
+      this.session.retransmitter.removeAllListeners("close");
 
-      if (session.connectionTimeout > 0) {
-        this[_resetTimer]();
+      if (this.session.connectionTimeout > 0) {
+        this.resetTimer();
       }
     });
 
-    session.once("certificate", (cert) =>
+    this.session.once("certificate", (cert: Buffer) =>
       process.nextTick(() => this.emit("certificate", cert))
     );
 
-    session.on("error", (code) =>
+    this.session.on("error", (code: number) =>
       this.emit("error", new Error(`alert code ${code}`))
     );
 
@@ -193,28 +203,25 @@ class Socket extends Duplex {
    * Opens DTLS connection.
    * @param {Function} [callback]
    */
-  connect(callback) {
+
+  connect(callback: any) {
     if (typeof callback === "function") {
       this.once("connect", callback);
     }
 
-    process.nextTick(() => this[_protocol].start());
+    process.nextTick(() => this.protocol.start());
   }
 
   /**
    * Set MTU (Minimal Transfer Unit) for the socket.
    * @param {number} mtu
    */
-  setMTU(mtu) {
-    if (typeof mtu !== "number") {
-      throw new TypeError("Invalid type of argument `mtu`");
-    }
-
+  setMTU(mtu: number) {
     const isValid =
       Number.isInteger(mtu) && mtu <= DTLS_MAX_MTU && mtu >= DTLS_MIN_MTU;
 
     if (isValid) {
-      this[_session].mtu = mtu;
+      this.session.mtu = mtu;
     } else {
       throw new Error("Invalid MTU");
     }
@@ -225,7 +232,7 @@ class Socket extends Duplex {
    * @returns {number}
    */
   getMTU() {
-    return this[_session].mtu;
+    return this.session.mtu;
   }
 
   /**
@@ -234,9 +241,9 @@ class Socket extends Duplex {
    * @param {number} timeout
    * @param {Function} [callback]
    */
-  setTimeout(timeout, callback) {
+  setTimeout(timeout: number, callback: any) {
     if (Number.isSafeInteger(timeout) && timeout > 0) {
-      this[_session].connectionTimeout = timeout;
+      this.session.connectionTimeout = timeout;
     }
 
     if (typeof callback === "function") {
@@ -247,9 +254,9 @@ class Socket extends Duplex {
   /**
    * @private
    */
-  [_onTimeout]() {
-    clearTimeout(this[_timeout]);
-    this[_timeout] = null;
+  private onTimeout() {
+    clearTimeout(this.timeout);
+    this.timeout = null;
 
     this.emit("timeout");
   }
@@ -257,19 +264,19 @@ class Socket extends Duplex {
   /**
    * @private
    */
-  [_resetTimer]() {
-    const { connectionTimeout } = this[_session];
+  private resetTimer() {
+    const { connectionTimeout } = this.session;
 
     if (connectionTimeout === 0) {
       return;
     }
 
-    if (this[_timeout] !== null) {
-      clearTimeout(this[_timeout]);
+    if (this.timeout !== null) {
+      clearTimeout(this.timeout);
     }
 
-    this[_timeout] = setTimeout(() => this[_onTimeout](), connectionTimeout);
-    this[_timeout].unref();
+    this.timeout = setTimeout(() => this.onTimeout(), connectionTimeout);
+    this.timeout.unref();
   }
 
   /**
@@ -279,17 +286,17 @@ class Socket extends Duplex {
    * @returns {string}
    */
   get alpnProtocol() {
-    return this[_session].selectedALPNProtocol;
+    return this.session.selectedALPNProtocol;
   }
 
   /**
    * Close the underlying socket and stop listening for data on it.
    */
   close() {
-    this[_socket].close();
+    this.socket.close();
 
-    if (this[_timeout] !== null) {
-      clearTimeout(this[_timeout]);
+    if (this.timeout !== null) {
+      clearTimeout(this.timeout);
     }
   }
 
@@ -304,13 +311,13 @@ class Socket extends Duplex {
    * @param {string} encoding
    * @param {Function} callback
    */
-  _write(chunk, encoding, callback) {
-    if (this[_session].isHandshakeInProcess) {
-      this[_queue].push(chunk);
+  _write(chunk: Buffer, encoding: string, callback: any) {
+    if (this.session.isHandshakeInProcess) {
+      this.queue.push(chunk);
       this.once("connect", () => callback());
     } else {
-      this[_session].sendMessage(chunk);
-      this[_resetTimer]();
+      this.session.sendMessage(chunk);
+      this.resetTimer();
       callback();
     }
   }
@@ -319,8 +326,8 @@ class Socket extends Duplex {
    * @private
    */
   _destroy() {
-    this[_queue].length = 0;
-    this[_session] = null;
+    this.queue.length = 0;
+    this.session = null;
   }
 }
 
@@ -330,7 +337,7 @@ class Socket extends Duplex {
  * @param {Function} [callback]
  * @returns {Socket}
  */
-function connect(options = {}, callback) {
+export function connect(options: Options = {} as any, callback?: any) {
   if (!isDuplexStream(options.socket)) {
     options.socket = unicast.createSocket(options);
   }
@@ -347,7 +354,7 @@ function connect(options = {}, callback) {
  * @param {string} enc
  * @param {Function} callback
  */
-function chunkFilter(data, enc, callback) {
+function chunkFilter(data: Buffer, enc: string, callback: any) {
   const isCorrect = isDtls(data);
   debug("got message, is dtls = %s", isCorrect);
   callback(!isCorrect);
@@ -357,7 +364,7 @@ function chunkFilter(data, enc, callback) {
  * Validates PSK secret.
  * @param {Buffer} pskSecret
  */
-function validatePSKSecret(pskSecret) {
+function validatePSKSecret(pskSecret: Buffer) {
   if (pskSecret.length === 0) {
     throw new Error("Invalid PSK secret");
   }
@@ -367,12 +374,8 @@ function validatePSKSecret(pskSecret) {
  * Validates PSK identity.
  * @param {string|Buffer} pskIdentity
  */
-function validatePSKIdentity(pskIdentity) {
+function validatePSKIdentity(pskIdentity: Buffer) {
   if (pskIdentity.length === 0) {
     throw new Error("Invalid PSK identity");
   }
 }
-
-module.exports = {
-  connect,
-};
