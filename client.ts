@@ -8,6 +8,7 @@ setTimeout(() => {
     remotePort: 4445,
     remoteAddress: "127.0.0.1",
     maxHandshakeRetransmissions: 1,
+    extendedMasterSecret: false,
   });
 
   socket.on("error", (err) => {

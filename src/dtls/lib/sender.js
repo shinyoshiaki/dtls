@@ -189,7 +189,7 @@ module.exports = class Sender extends Readable {
    * @param {Buffer} message Packet payload.
    * @param {handshakeType} type
    */
-  sendHandshake(message, type, cache = true) {
+  sendHandshake(message, type) {
     const { mtu } = this.session;
     const packetLength = this[_nextPacketQueue].length;
 
@@ -219,7 +219,7 @@ module.exports = class Sender extends Readable {
     });
 
     // Store unfragmented handshake message.
-    if (cache) this.session.appendHandshake(createPacket(message), true);
+    this.session.appendHandshake(createPacket(message));
 
     if (isEnough >= 0) {
       this.output.handshake.write(createPacket(message));
@@ -299,6 +299,13 @@ module.exports = class Sender extends Readable {
 
     const extensions = [];
 
+    if (this.session.extendedMasterSecret) {
+      extensions.push({
+        type: extensionTypes.EXTENDED_MASTER_SECRET,
+        data: EMPTY_BUFFER,
+      });
+    }
+
     extensions.push({
       type: extensionTypes.ELLIPTIC_CURVES,
       data: namedCurvesExtension,
@@ -323,15 +330,28 @@ module.exports = class Sender extends Readable {
       ),
     });
 
+    if (this.session.alpnProtocols.length > 0) {
+      const alpnOutput = encode(
+        this.session.alpnProtocols,
+        ALPNProtocolNameList
+      );
+
+      extensions.push({
+        type: extensionTypes.APPLICATION_LAYER_PROTOCOL_NEGOTIATION,
+        data: alpnOutput,
+      });
+    }
+
+    extensions.push({
+      type: extensionTypes.EC_POINT_FORMATS,
+      data: ecPointFormatExtension,
+    });
+
     if (extensions.length > 0) {
       encode(extensions, output, ExtensionList);
     }
 
-    this.sendHandshake(
-      output.slice(),
-      handshakeType.CLIENT_HELLO,
-      this.session.cookie ? true : false
-    );
+    this.sendHandshake(output.slice(), handshakeType.CLIENT_HELLO);
   }
 
   /**

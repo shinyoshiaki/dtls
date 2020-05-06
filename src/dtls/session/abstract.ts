@@ -2,9 +2,10 @@
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["type"] }] */
 /* eslint-disable getter-return */
-
-const assert = require("assert");
-const crypto = require("crypto");
+import * as nacl from "tweetnacl";
+import assert from "assert";
+import * as crypto from "crypto";
+import { namedCurves } from "../lib/constants";
 const Emitter = require("events");
 const { encode, BinaryStream } = require("binary-data");
 const {
@@ -24,15 +25,13 @@ const NullCipher = require("../cipher/null");
 const debug = require("../utils/debug")("dtls:session");
 const { Handshake } = require("../lib/protocol");
 const SlidingWindow = require("../lib/sliding-window");
-const nacl = require("tweetnacl");
 
 /**
  * This class implements abstract DTLS session.
  */
-module.exports = class AbstractSession extends Emitter {
-  /**
-   * @class AbstractSession
-   */
+export default class AbstractSession extends Emitter {
+  private ellipticCurve?: string;
+
   constructor() {
     super();
 
@@ -64,7 +63,6 @@ module.exports = class AbstractSession extends Emitter {
 
     this.peerEllipticPublicKey = null; // peer's ecdhe public key
     this.ellipticPublicKey = null; // my public ecdhe key
-    this.ellipticCurve = null; // curve name
     this.ecdhe = null;
 
     this.extendedMasterSecret = true;
@@ -90,13 +88,14 @@ module.exports = class AbstractSession extends Emitter {
    */
   get type() {
     notImplemented();
+    return;
   }
 
   /**
    * Emit the event to send a message.
    * @param {number} type Message type to send.
    */
-  send(type) {
+  send(type: number) {
     this.emit("send", type);
   }
 
@@ -104,7 +103,7 @@ module.exports = class AbstractSession extends Emitter {
    * Send the `application data` message.
    * @param {Buffer} data
    */
-  sendMessage(data) {
+  sendMessage(data: Buffer) {
     this.emit("send:appdata", data);
   }
 
@@ -113,14 +112,14 @@ module.exports = class AbstractSession extends Emitter {
    * @param {number} description
    * @param {number} level
    */
-  sendAlert(description, level) {
+  sendAlert(description: number, level: number) {
     this.emit("send:alert", description, level);
   }
 
   /**
    * Handles starting handshake.
    */
-  startHandshake() {
+  startHandshake(done?: () => void) {
     debug("start handshake");
     this.emit("handshake:start");
 
@@ -148,7 +147,7 @@ module.exports = class AbstractSession extends Emitter {
    * Emit the error event.
    * @param {number} type Alert description type.
    */
-  error(type) {
+  error(type: number) {
     this.emit("error", type);
   }
 
@@ -156,7 +155,7 @@ module.exports = class AbstractSession extends Emitter {
    * Notify the application about arrived server certificate.
    * @param {Object} cert The x509 server certificate.
    */
-  certificate(cert) {
+  certificate(cert: object) {
     this.serverCertificate = cert;
     this.emit("certificate", cert);
   }
@@ -165,15 +164,43 @@ module.exports = class AbstractSession extends Emitter {
    * @protected
    * @param {Function} done
    */
-  createPreMasterSecret(done) {
-    if (this.nextCipher.kx.signType === signTypes.ECDHE) {
-      this.clientPremaster = Buffer.from(
-        nacl.scalarMult(
-          Buffer.from(this.ecdhe.secretKey.buffer),
-          this.peerEllipticPublicKey
-        )
-      );
+  createPreMasterSecret(done: () => void) {
+    if (this.nextCipher.kx.id === kxTypes.ECDHE_PSK) {
+      const secret = this.ecdhe.computeSecret(this.peerEllipticPublicKey);
+      this.clientPremaster = createPSKPreMasterSecret(this.pskSecret, secret);
       process.nextTick(done);
+    } else if (this.nextCipher.kx.signType === signTypes.ECDHE) {
+      switch (this.ellipticCurve) {
+        case "x25519":
+          {
+            this.clientPremaster = Buffer.from(
+              nacl.scalarMult(
+                Buffer.from(this.ecdhe.secretKey.buffer),
+                this.peerEllipticPublicKey
+              )
+            );
+          }
+          break;
+        default: {
+          this.clientPremaster = this.ecdhe.computeSecret(
+            this.peerEllipticPublicKey
+          );
+        }
+      }
+
+      process.nextTick(done);
+    } else if (this.nextCipher.kx.id === kxTypes.PSK) {
+      this.clientPremaster = createPSKPreMasterSecret(this.pskSecret);
+      process.nextTick(done);
+    } else {
+      createPreMasterSecret(this.version, (err: any, premaster: Buffer) => {
+        if (err) {
+          throw err;
+        }
+
+        this.clientPremaster = premaster;
+        done();
+      });
     }
   }
 
@@ -181,22 +208,22 @@ module.exports = class AbstractSession extends Emitter {
    * @protected
    */
   createMasterSecret() {
-    // if (this.extendedMasterSecret) {
-    //   const handshakes = this.handshakeQueue.slice();
+    if (this.extendedMasterSecret) {
+      const handshakes = this.handshakeQueue.slice();
 
-    //   this.masterSecret = createExtendedMasterSecret(
-    //     this.clientPremaster,
-    //     handshakes,
-    //     this.nextCipher
-    //   );
-    // } else {
-    this.masterSecret = createMasterSecret(
-      this.clientRandom,
-      this.serverRandom,
-      this.clientPremaster,
-      this.nextCipher
-    );
-    // }
+      this.masterSecret = createExtendedMasterSecret(
+        this.clientPremaster,
+        handshakes,
+        this.nextCipher
+      );
+    } else {
+      this.masterSecret = createMasterSecret(
+        this.clientRandom,
+        this.serverRandom,
+        this.clientPremaster,
+        this.nextCipher
+      );
+    }
 
     this.clientPremaster = null;
   }
@@ -207,8 +234,18 @@ module.exports = class AbstractSession extends Emitter {
   createElliptic() {
     assert.strictEqual(signTypes.ECDHE, this.nextCipher.kx.signType);
 
-    this.ecdhe = nacl.box.keyPair();
-    this.ellipticPublicKey = Buffer.from(this.ecdhe.publicKey.buffer);
+    switch (this.ellipticCurve) {
+      case "x25519":
+        {
+          this.ecdhe = nacl.box.keyPair();
+          this.ellipticPublicKey = Buffer.from(this.ecdhe.publicKey.buffer);
+        }
+        break;
+      default: {
+        this.ecdhe = crypto.createECDH(this.ellipticCurve!);
+        this.ellipticPublicKey = this.ecdhe.generateKeys();
+      }
+    }
   }
 
   /**
@@ -265,7 +302,7 @@ module.exports = class AbstractSession extends Emitter {
    * Store the handshake message for the finished checksum.
    * @param {Buffer} packet Encoded handshake message.
    */
-  appendHandshake(packet) {
+  appendHandshake(packet: Buffer) {
     assert(this.isHandshakeInProcess);
 
     if (!Buffer.isBuffer(packet)) {
@@ -289,7 +326,7 @@ module.exports = class AbstractSession extends Emitter {
    * @param {Cipher} cipher
    * @param {Object} record Record layer message.
    */
-  encrypt(cipher, record) {
+  encrypt(cipher: any, record: any) {
     const data = record.fragment;
 
     const encrypted = cipher.encrypt(this, data, record);
@@ -302,7 +339,7 @@ module.exports = class AbstractSession extends Emitter {
    * @param {Cipher} cipher
    * @param {Object} record Record layer message.
    */
-  decrypt(cipher, record) {
+  decrypt(cipher: any, record: any) {
     const encrypted = record.fragment;
     const data = cipher.decrypt(this, encrypted, record);
 
@@ -313,10 +350,10 @@ module.exports = class AbstractSession extends Emitter {
    * Notify about `application data` message.
    * @param {Buffer} data
    */
-  packet(data) {
+  packet(data: Buffer) {
     this.emit("data", data);
   }
-};
+}
 
 /**
  * Fallback for abstract methods.

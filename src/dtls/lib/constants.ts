@@ -93,14 +93,17 @@ const cipherSuites = {
 
 const defaultCipherSuites = [
   cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+  cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+  cipherSuites.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+  cipherSuites.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 ];
 
-// if (isChachaSupported) {
-//   defaultCipherSuites.unshift(
-//     cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-//     cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-//   );
-// }
+if (isChachaSupported) {
+  defaultCipherSuites.unshift(
+    cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+    cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+  );
+}
 
 const compressionMethod = {
   NULL: 0,
@@ -151,14 +154,14 @@ const AEAD_CHACHA20_POLY1305 = {
 const randomSize = 32;
 const maxSessionIdSize = 32;
 
-const namedCurves = {
+enum namedCurves {
   // curves 1 - 22 was deprecated
-  secp256r1: 23,
-  secp384r1: 24,
-  secp521r1: 25,
-  x25519: 29,
+  secp256r1 = 23,
+  secp384r1 = 24,
+  secp521r1 = 25,
+  x25519 = 29,
   // x448: 30,  do not support by nodejs
-};
+}
 
 const ecCurveTypes = {
   namedCurve: 3,
@@ -226,7 +229,7 @@ const certificateType = {
   ecdsa_sign: 64,
 };
 
-module.exports = {
+export {
   alertLevel,
   alertDescription,
   sessionType,

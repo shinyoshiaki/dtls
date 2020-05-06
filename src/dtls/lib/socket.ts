@@ -2,12 +2,13 @@
 
 import { Duplex, pipeline } from "readable-stream";
 import { toCipherSuite } from "../utils/cipher-suite";
+import ClientSession from "../session/client";
+const ProtocolReader = require("../fsm/protocol");
+
 const unicast = require("unicast");
 const isDtls = require("is-dtls");
 const streamfilter = require("streamfilter");
 const debug = require("../utils/debug")("dtls:socket");
-const ClientSession = require("../session/client");
-const ProtocolReader = require("../fsm/protocol");
 const Sender = require("./sender");
 const Decoder = require("../filter/decoder");
 const Defragmentation = require("../filter/defragmentation");
@@ -46,20 +47,7 @@ class Socket extends Duplex {
   private protocol?: any;
   private socket?: any;
   private timeout?: any;
-  /**
-   * @class Socket
-   * @param {Object} options
-   * @param {number} [options.maxHandshakeRetransmissions]
-   * @param {boolean} [options.extendedMasterSecret]
-   * @param {Function} [options.checkServerIdentity]
-   * @param {string|string[]} [options.alpn]
-   * @param {Buffer} [options.certificate]
-   * @param {Buffer} [options.certificatePrivateKey]
-   * @param {string|Buffer} [options.pskIdentity]
-   * @param {string|Buffer} [options.pskSecret]
-   * @param {boolean} [options.ignorePSKIdentityHint]
-   * @param {number[]} [options.cipherSuites]
-   */
+
   constructor(options: Options = {} as any) {
     super({ objectMode: false, decodeStrings: false, allowHalfOpen: true });
 
@@ -327,7 +315,7 @@ class Socket extends Duplex {
    */
   _destroy() {
     this.queue.length = 0;
-    this.session = null;
+    this.session = null as any;
   }
 }
 

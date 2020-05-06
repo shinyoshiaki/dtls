@@ -1,12 +1,13 @@
 "use strict";
 
-const assert = require("assert");
-const crypto = require("crypto");
-const {
+import AbstractSession from "./abstract";
+import assert from "assert";
+import crypto from "crypto";
+import {
   sessionType,
   signatureScheme,
   certificateType,
-} = require("../lib/constants");
+} from "../lib/constants";
 const {
   encode,
   createEncode,
@@ -19,7 +20,7 @@ const { RSA_PKCS1_PADDING } = crypto.constants;
  * Check if argument is client type session.
  * @param {AbstractSession} session
  */
-function assertClient(session) {
+function assertClient(session: AbstractSession) {
   assert((session.sessionType = sessionType.CLIENT));
 }
 
@@ -27,7 +28,7 @@ function assertClient(session) {
  * Check if argument is server type session.
  * @param {AbstractSession} session
  */
-function assertServer(session) {
+function assertServer(session: AbstractSession) {
   assert((session.sessionType = sessionType.SERVER));
 }
 
@@ -36,14 +37,14 @@ function assertServer(session) {
  * @returns {number}
  */
 function unixtime() {
-  return parseInt(Date.now() / 1e3, 10);
+  return parseInt((Date.now() / 1e3).toString(), 10);
 }
 
 /**
  * @param {Buffer} random
  * @param {Function} [done]
  */
-function createRandom(random, done) {
+function createRandom(random: Buffer, done: () => void) {
   random.writeUInt32BE(unixtime(), 0);
   crypto.randomFill(random, 4, done);
 }
@@ -52,7 +53,7 @@ function createRandom(random, done) {
  * @param {number} version
  * @param {Function} [done]
  */
-function createPreMasterSecret(version, done) {
+function createPreMasterSecret(version: number, done: () => void) {
   const premaster = Buffer.allocUnsafe(48);
 
   premaster.writeUInt16BE(version, 0);
@@ -65,7 +66,7 @@ function createPreMasterSecret(version, done) {
  * @param {Buffer} [otherSecret]
  * @returns {Buffer}
  */
-function createPSKPreMasterSecret(psk, otherSecret) {
+function createPSKPreMasterSecret(psk: Buffer, otherSecret: Buffer) {
   const premaster = createEncode();
 
   if (Buffer.isBuffer(otherSecret)) {
@@ -87,7 +88,12 @@ function createPSKPreMasterSecret(psk, otherSecret) {
  * @param {Object} cipher
  * @returns {Buffer}
  */
-function createMasterSecret(clientRandom, serverRandom, premaster, cipher) {
+function createMasterSecret(
+  clientRandom: Buffer,
+  serverRandom: Buffer,
+  premaster: Buffer,
+  cipher: any
+) {
   const seed = Buffer.concat([clientRandom, serverRandom]);
 
   const label = "master secret";
@@ -102,7 +108,11 @@ function createMasterSecret(clientRandom, serverRandom, premaster, cipher) {
  * @param {Object} cipher
  * @returns {Buffer}
  */
-function createExtendedMasterSecret(premaster, handshakes, cipher) {
+function createExtendedMasterSecret(
+  premaster: Buffer,
+  handshakes: Buffer,
+  cipher: any
+) {
   const sessionHash = hash(cipher.hash, handshakes);
   const label = "extended master secret";
   const masterSecret = cipher.prf(48, premaster, label, sessionHash);
@@ -115,7 +125,7 @@ function createExtendedMasterSecret(premaster, handshakes, cipher) {
  * @param {Buffer} premaster
  * @returns {Buffer}
  */
-function encryptPreMasterSecret(publicKey, premaster) {
+function encryptPreMasterSecret(publicKey: Buffer, premaster: Buffer) {
   const encrypted = crypto.publicEncrypt(
     { key: publicKey, padding: RSA_PKCS1_PADDING },
     premaster
@@ -132,7 +142,12 @@ function encryptPreMasterSecret(publicKey, premaster) {
  * @param {string} label
  * @returns {Buffer}
  */
-function createFinished(cipher, master, handshakes, label) {
+function createFinished(
+  cipher: any,
+  master: Buffer,
+  handshakes: Buffer,
+  label: string
+) {
   const bytes = hash(cipher.hash, handshakes);
   const final = cipher.prf(cipher.verifyDataLength, master, label, bytes);
 
@@ -144,7 +159,7 @@ function createFinished(cipher, master, handshakes, label) {
  * @param {Buffer} data Data to encrypt.
  * @returns {Buffer}
  */
-function hash(algorithm, data) {
+function hash(algorithm: string, data: Buffer) {
   return crypto.createHash(algorithm).update(data).digest();
 }
 
@@ -153,7 +168,7 @@ function hash(algorithm, data) {
  * @param {number} algorithm
  * @returns {string|null}
  */
-function getHashNameBySignAlgo(algorithm) {
+function getHashNameBySignAlgo(algorithm: number) {
   switch (algorithm) {
     case signatureScheme.ecdsa_secp256r1_sha256:
     case signatureScheme.rsa_pkcs1_sha256:
@@ -184,7 +199,7 @@ function getHashNameBySignAlgo(algorithm) {
  * @param {Object} certificate The x509 certificate object.
  * @returns {number}
  */
-function getCertificateType(certificate) {
+function getCertificateType(certificate: any) {
   switch (certificate.publicKey.algo) {
     case "ecEncryption":
       return certificateType.ecdsa_sign;
@@ -202,7 +217,7 @@ function getCertificateType(certificate) {
  * @param {Object} certificate The x509 certificate object.
  * @returns {number}
  */
-function getCertificateSignatureAlgorithm(certificate) {
+function getCertificateSignatureAlgorithm(certificate: any) {
   switch (certificate.signatureAlgorithm) {
     case "ecdsaWithSha1":
       return signatureScheme.ecdsa_sha1;
@@ -227,7 +242,7 @@ function getCertificateSignatureAlgorithm(certificate) {
   throw new Error("Unknown certificate signature algorithm");
 }
 
-module.exports = {
+export {
   hash,
   createRandom,
   unixtime,

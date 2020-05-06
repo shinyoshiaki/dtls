@@ -2,8 +2,8 @@
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["type"] }] */
 
-const crypto = require("crypto");
-const AbstractSession = require("./abstract");
+import * as crypto from "crypto";
+import AbstractSession from "./abstract";
 const { sessionType, randomSize } = require("../lib/constants");
 const {
   createRandom,
@@ -15,7 +15,7 @@ const { createRetransmitClient } = require("../fsm/retransmitter");
 /**
  * This class implements DTLS client-side session.
  */
-module.exports = class ClientSession extends AbstractSession {
+export default class ClientSession extends AbstractSession {
   /**
    * @class ClientSession
    */
@@ -70,7 +70,7 @@ module.exports = class ClientSession extends AbstractSession {
    * Handles starting of handshake.
    * @param {Function} done
    */
-  startHandshake(done) {
+  startHandshake(done: () => void) {
     super.startHandshake();
 
     this.clientRandom = Buffer.allocUnsafe(randomSize);
@@ -120,7 +120,7 @@ module.exports = class ClientSession extends AbstractSession {
    * @param {Certificate} certificate
    * @returns {bool}
    */
-  verifyCertificate(certificate) {
+  verifyCertificate(certificate: any) {
     return Boolean(this.serverCertificateVerifyCallback(certificate));
   }
 
@@ -139,4 +139,4 @@ module.exports = class ClientSession extends AbstractSession {
       this.clientCertificatePrivateKey
     );
   }
-};
+}

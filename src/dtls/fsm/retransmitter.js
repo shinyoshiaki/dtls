@@ -225,11 +225,9 @@ export function createRetransmitServer() {
   return new RetransmitMachine(WAITING);
 }
 
-
-
-export const states= {
+export const states = {
   PREPARING,
   SENDING,
   WAITING,
   FINISHED,
-},
+};

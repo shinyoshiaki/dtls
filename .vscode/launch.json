@@ -8,15 +8,13 @@
       "type": "node",
       "request": "launch",
       "name": "Debug DTLS",
-      "program": "${workspaceFolder}/client.js"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug DTLS via NPM",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["start"],
-      "port": 9229
+      "program": "${workspaceRoot}/node_modules/ts-node/dist/bin.js",
+      "args": [
+        "--files",
+        "--project",
+        "${workspaceRoot}/tsconfig.json",
+        "${workspaceRoot}/client.ts"
+      ]
     }
   ]
 }
