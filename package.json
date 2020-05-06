@@ -7,9 +7,7 @@
     "format": "prettier --write src/**/*.js",
     "test": "npm run unit-test",
     "unit-test": "npx jest",
-    "integrated-test": "node test/integrated/test.js",
-    "start": "DEBUG=dtls,dtls:* DEBUG_DEPTH=10 node example.js",
-    "gnutls-server": "docker run -it --name dtlsd --rm -e GNUTLS_DEBUG_LEVEL=2 -e PRIORITY=NORMAL:+AEAD:+ECDHE-RSA:+VERS-DTLS1.2 -e KEYFILE=key-rsa.pem -e CERTFILE=cert-rsa.pem -p 4444:4444/udp nodertc/dtls-server:1"
+    "start": "ts-node client.js"
   },
   "keywords": [
     "dtls",
@@ -53,7 +51,9 @@
   },
   "devDependencies": {
     "jest": "^23.6.0",
-    "prettier": "^2.0.5"
+    "prettier": "^2.0.5",
+    "ts-node": "^8.10.1",
+    "typescript": "^3.8.3"
   },
   "jest": {
     "modulePaths": [

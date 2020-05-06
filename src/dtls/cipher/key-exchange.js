@@ -2,19 +2,10 @@
 
 const { signTypes, keyTypes, kxTypes } = require("../lib/constants");
 
-module.exports = {
-  createRSAKeyExchange,
-  createECDHERSAKeyExchange,
-  createECDHEECDSAKeyExchange,
-  createNULLKeyExchange,
-  createPSKKeyExchange,
-  createECDHEPSKKeyExchange,
-};
-
 /**
  * This class represent type of key exchange mechanism.
  */
-class KeyExchange {
+export class KeyExchange {
   /**
    * @class KeyExchange
    */
@@ -38,7 +29,7 @@ class KeyExchange {
  * Creates `RSA` key exchange.
  * @returns {KeyExchange}
  */
-function createRSAKeyExchange() {
+export function createRSAKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.RSA;
@@ -53,7 +44,7 @@ function createRSAKeyExchange() {
  * Creates `ECDHE_RSA` key exchange.
  * @returns {KeyExchange}
  */
-function createECDHERSAKeyExchange() {
+export function createECDHERSAKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.ECDHE_RSA;
@@ -69,7 +60,7 @@ function createECDHERSAKeyExchange() {
  * Creates `ECDHE_ECDSA` key exchange.
  * @returns {KeyExchange}
  */
-function createECDHEECDSAKeyExchange() {
+export function createECDHEECDSAKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.ECDHE_ECDSA;
@@ -85,7 +76,7 @@ function createECDHEECDSAKeyExchange() {
  * Creates `NULL` key exchange.
  * @returns {KeyExchange}
  */
-function createNULLKeyExchange() {
+export function createNULLKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.NULL;
@@ -101,7 +92,7 @@ function createNULLKeyExchange() {
  * Creates `PSK` key exchange.
  * @returns {KeyExchange}
  */
-function createPSKKeyExchange() {
+export function createPSKKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.PSK;
@@ -117,7 +108,7 @@ function createPSKKeyExchange() {
  * Creates `ECDHE_PSK` key exchange.
  * @returns {KeyExchange}
  */
-function createECDHEPSKKeyExchange() {
+export function createECDHEPSKKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.ECDHE_PSK;

@@ -34,7 +34,7 @@ const transitions = {
 /**
  * Timeout and Retransmission State Machine.
  */
-class RetransmitMachine extends Emitter {
+export class RetransmitMachine extends Emitter {
   /**
    * @class RetransmitMachine
    * @param {string} initialState
@@ -212,7 +212,7 @@ class RetransmitMachine extends Emitter {
  * for the clients.
  * @returns {RetransmitMachine}
  */
-function createRetransmitClient() {
+export function createRetransmitClient() {
   return new RetransmitMachine(PREPARING);
 }
 
@@ -221,18 +221,15 @@ function createRetransmitClient() {
  * for the servers.
  * @returns {RetransmitMachine}
  */
-function createRetransmitServer() {
+export function createRetransmitServer() {
   return new RetransmitMachine(WAITING);
 }
 
-module.exports = {
-  createRetransmitClient,
-  createRetransmitServer,
-  RetransmitMachine,
-  states: {
-    PREPARING,
-    SENDING,
-    WAITING,
-    FINISHED,
-  },
-};
+
+
+export const states= {
+  PREPARING,
+  SENDING,
+  WAITING,
+  FINISHED,
+},
