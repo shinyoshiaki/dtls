@@ -1,7 +1,7 @@
 "use strict";
 
-const { connect } = require("./src/lib/socket");
-const { cipherSuites } = require("./src/lib/constants");
+const { connect } = require("./dtls/lib/socket");
+const { cipherSuites } = require("./dtls/lib/constants");
 
 module.exports = {
   connect,

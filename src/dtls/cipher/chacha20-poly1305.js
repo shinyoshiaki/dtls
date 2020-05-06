@@ -3,7 +3,7 @@
 const crypto = require("crypto");
 const xor = require("buffer-xor/inplace");
 const { createDecode, encode } = require("binary-data");
-const AEADCipher = require("../cipher/aead");
+const AEADCipher = require("./aead");
 const { AEAD_CHACHA20_POLY1305 } = require("../lib/constants");
 const debug = require("../utils/debug")("dtls:cipher:aead");
 const { sessionType } = require("../lib/constants");

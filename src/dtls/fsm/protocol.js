@@ -3,7 +3,7 @@
 const assert = require("assert");
 const crypto = require("crypto");
 const { Writable } = require("readable-stream");
-const { constants: states, createState } = require("../fsm/states");
+const { constants: states, createState } = require("./states");
 const {
   contentType,
   alertDescription,

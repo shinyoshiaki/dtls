@@ -6,14 +6,14 @@ const {
   AEAD_AES_256_GCM,
 } = require("../lib/constants");
 const AEADCipher = require("./aead");
-const Chacha20Poly1305Cipher = require("../cipher/chacha20-poly1305");
+const Chacha20Poly1305Cipher = require("./chacha20-poly1305");
 const {
   createRSAKeyExchange,
   createECDHERSAKeyExchange,
   createECDHEECDSAKeyExchange,
   createPSKKeyExchange,
   createECDHEPSKKeyExchange,
-} = require("../cipher/key-exchange");
+} = require("./key-exchange");
 
 module.exports = {
   createCipher,

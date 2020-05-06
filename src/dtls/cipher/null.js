@@ -2,8 +2,8 @@
 
 /* eslint-disable class-methods-use-this */
 
-const Cipher = require("../cipher/abstract");
-const { createNULLKeyExchange } = require("../cipher/key-exchange");
+const Cipher = require("./abstract");
+const { createNULLKeyExchange } = require("./key-exchange");
 
 /**
  * Default passthrough cipher.

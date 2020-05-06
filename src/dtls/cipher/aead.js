@@ -6,7 +6,7 @@ const debug = require("../utils/debug")("dtls:cipher:aead");
 const { sessionType } = require("../lib/constants");
 const { AEADAdditionalData } = require("../lib/protocol");
 const { phash } = require("./utils");
-const Cipher = require("../cipher/abstract");
+const Cipher = require("./abstract");
 
 /**
  * This class implements AEAD cipher family.
