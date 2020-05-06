@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const { handshakeType, contentType } = require('lib/constants');
+const { handshakeType, contentType } = require("../lib/constants");
 
 const {
   CLIENT_HELLO,

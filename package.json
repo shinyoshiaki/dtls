@@ -4,8 +4,8 @@
   "description": "Secure UDP communications using DTLS.",
   "main": "src/index.js",
   "scripts": {
-    "test": "npm run lint && npm run unit-test",
-    "lint": "npx eslint --quiet .",
+    "format": "prettier --write src/**/*.js",
+    "test": "npm run unit-test",
     "unit-test": "npx jest",
     "integrated-test": "node test/integrated/test.js",
     "start": "DEBUG=dtls,dtls:* DEBUG_DEPTH=10 node example.js",

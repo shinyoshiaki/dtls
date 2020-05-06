@@ -1,32 +1,32 @@
-'use strict';
+"use strict";
 
-const { Duplex, pipeline } = require('readable-stream');
-const unicast = require('unicast');
-const isDtls = require('is-dtls');
-const streamfilter = require('streamfilter');
-const debug = require('debug')('dtls:socket');
-const ClientSession = require('session/client');
-const ProtocolReader = require('fsm/protocol');
-const Sender = require('lib/sender');
-const Decoder = require('filter/decoder');
-const Defragmentation = require('filter/defragmentation');
-const Reordering = require('filter/reordering');
-const x509 = require('@fidm/x509');
-const { duplex: isDuplexStream } = require('is-stream');
-const { toCipherSuite } = require('utils/cipher-suite');
+const { Duplex, pipeline } = require("readable-stream");
+const unicast = require("unicast");
+const isDtls = require("is-dtls");
+const streamfilter = require("streamfilter");
+const debug = require("../utils/debug")("dtls:socket");
+const ClientSession = require("../session/client");
+const ProtocolReader = require("../fsm/protocol");
+const Sender = require("./sender");
+const Decoder = require("../filter/decoder");
+const Defragmentation = require("../filter/defragmentation");
+const Reordering = require("../filter/reordering");
+const x509 = require("@fidm/x509");
+const { duplex: isDuplexStream } = require("is-stream");
+const { toCipherSuite } = require("../utils/cipher-suite");
 
-const _session = Symbol('_session');
-const _queue = Symbol('_queue');
-const _protocol = Symbol('_protocol');
-const _socket = Symbol('_socket');
-const _timeout = Symbol('_timeout');
-const _onTimeout = Symbol('_onTimeout');
-const _resetTimer = Symbol('_resetTimer');
+const _session = Symbol("_session");
+const _queue = Symbol("_queue");
+const _protocol = Symbol("_protocol");
+const _socket = Symbol("_socket");
+const _timeout = Symbol("_timeout");
+const _onTimeout = Symbol("_onTimeout");
+const _resetTimer = Symbol("_resetTimer");
 
 const DTLS_MAX_MTU = 1420; // 1500 - IP/UDP/DTLS headers
 const DTLS_MIN_MTU = 100;
 
-const isString = str => typeof str === 'string';
+const isString = (str) => typeof str === "string";
 
 /**
  * DTLS socket.
@@ -64,7 +64,7 @@ class Socket extends Duplex {
     }
 
     // Set up server certificate verify callback.
-    if (typeof options.checkServerIdentity === 'function') {
+    if (typeof options.checkServerIdentity === "function") {
       session.serverCertificateVerifyCallback = options.checkServerIdentity;
     }
 
@@ -74,7 +74,7 @@ class Socket extends Duplex {
       if (options.certificatePrivateKey !== undefined) {
         session.clientCertificatePrivateKey = options.certificatePrivateKey;
       } else {
-        throw new Error('Expected private key');
+        throw new Error("Expected private key");
       }
     }
 
@@ -94,7 +94,7 @@ class Socket extends Duplex {
         session.alpnProtocols.push(...options.alpn);
       } else {
         throw new TypeError(
-          'Argument `options.alpn` accept a string or an array of a strings.'
+          "Argument `options.alpn` accept a string or an array of a strings."
         );
       }
     }
@@ -103,7 +103,7 @@ class Socket extends Duplex {
     if (Buffer.isBuffer(options.pskIdentity)) {
       validatePSKIdentity(options.pskIdentity);
       session.clientPSKIdentity = options.pskIdentity;
-    } else if (typeof options.pskIdentity === 'string') {
+    } else if (typeof options.pskIdentity === "string") {
       validatePSKIdentity(options.pskIdentity);
       session.clientPSKIdentity = Buffer.from(options.pskIdentity);
     }
@@ -112,8 +112,8 @@ class Socket extends Duplex {
     if (Buffer.isBuffer(options.pskSecret)) {
       session.pskSecret = options.pskSecret;
       validatePSKSecret(session.pskSecret);
-    } else if (typeof options.pskSecret === 'string') {
-      session.pskSecret = Buffer.from(options.pskSecret, 'ascii');
+    } else if (typeof options.pskSecret === "string") {
+      session.pskSecret = Buffer.from(options.pskSecret, "ascii");
       validatePSKSecret(session.pskSecret);
     }
 
@@ -128,22 +128,22 @@ class Socket extends Duplex {
     ) {
       const supportedCiphers = options.cipherSuites
         .map(toCipherSuite)
-        .filter(cipher => cipher > -1);
+        .filter((cipher) => cipher > -1);
 
       if (supportedCiphers.length === 0) {
-        throw new Error('Invalid cipher suites list');
+        throw new Error("Invalid cipher suites list");
       }
 
       session.cipherSuites = supportedCiphers;
     }
 
-    session.retransmitter.once('close', () => {
-      this.emit('timeout');
+    session.retransmitter.once("close", () => {
+      this.emit("timeout");
     });
 
-    const onerror = err => {
+    const onerror = (err) => {
       if (err) {
-        this.emit('error', err);
+        this.emit("error", err);
       }
     };
     const isdtls = streamfilter(chunkFilter);
@@ -157,34 +157,34 @@ class Socket extends Duplex {
     this[_socket] = socket;
     this[_timeout] = null;
 
-    session.on('data', packet => {
+    session.on("data", (packet) => {
       this[_resetTimer]();
       this.push(packet);
     });
 
-    session.once('handshake:finish', () => {
-      process.nextTick(() => this.emit('connect'));
+    session.once("handshake:finish", () => {
+      process.nextTick(() => this.emit("connect"));
 
-      this[_queue].forEach(data => session.sendMessage(data));
+      this[_queue].forEach((data) => session.sendMessage(data));
       this[_queue].length = 0;
 
-      session.retransmitter.removeAllListeners('close');
+      session.retransmitter.removeAllListeners("close");
 
       if (session.connectionTimeout > 0) {
         this[_resetTimer]();
       }
     });
 
-    session.once('certificate', cert =>
-      process.nextTick(() => this.emit('certificate', cert))
+    session.once("certificate", (cert) =>
+      process.nextTick(() => this.emit("certificate", cert))
     );
 
-    session.on('error', code =>
-      this.emit('error', new Error(`alert code ${code}`))
+    session.on("error", (code) =>
+      this.emit("error", new Error(`alert code ${code}`))
     );
 
-    this.once('timeout', () => {
-      debug('got timeout, close connection');
+    this.once("timeout", () => {
+      debug("got timeout, close connection");
       this.close();
     });
   }
@@ -194,8 +194,8 @@ class Socket extends Duplex {
    * @param {Function} [callback]
    */
   connect(callback) {
-    if (typeof callback === 'function') {
-      this.once('connect', callback);
+    if (typeof callback === "function") {
+      this.once("connect", callback);
     }
 
     process.nextTick(() => this[_protocol].start());
@@ -206,8 +206,8 @@ class Socket extends Duplex {
    * @param {number} mtu
    */
   setMTU(mtu) {
-    if (typeof mtu !== 'number') {
-      throw new TypeError('Invalid type of argument `mtu`');
+    if (typeof mtu !== "number") {
+      throw new TypeError("Invalid type of argument `mtu`");
     }
 
     const isValid =
@@ -216,7 +216,7 @@ class Socket extends Duplex {
     if (isValid) {
       this[_session].mtu = mtu;
     } else {
-      throw new Error('Invalid MTU');
+      throw new Error("Invalid MTU");
     }
   }
 
@@ -239,8 +239,8 @@ class Socket extends Duplex {
       this[_session].connectionTimeout = timeout;
     }
 
-    if (typeof callback === 'function') {
-      this.once('timeout', callback);
+    if (typeof callback === "function") {
+      this.once("timeout", callback);
     }
   }
 
@@ -251,7 +251,7 @@ class Socket extends Duplex {
     clearTimeout(this[_timeout]);
     this[_timeout] = null;
 
-    this.emit('timeout');
+    this.emit("timeout");
   }
 
   /**
@@ -307,7 +307,7 @@ class Socket extends Duplex {
   _write(chunk, encoding, callback) {
     if (this[_session].isHandshakeInProcess) {
       this[_queue].push(chunk);
-      this.once('connect', () => callback());
+      this.once("connect", () => callback());
     } else {
       this[_session].sendMessage(chunk);
       this[_resetTimer]();
@@ -349,7 +349,7 @@ function connect(options = {}, callback) {
  */
 function chunkFilter(data, enc, callback) {
   const isCorrect = isDtls(data);
-  debug('got message, is dtls = %s', isCorrect);
+  debug("got message, is dtls = %s", isCorrect);
   callback(!isCorrect);
 }
 
@@ -359,7 +359,7 @@ function chunkFilter(data, enc, callback) {
  */
 function validatePSKSecret(pskSecret) {
   if (pskSecret.length === 0) {
-    throw new Error('Invalid PSK secret');
+    throw new Error("Invalid PSK secret");
   }
 }
 
@@ -369,7 +369,7 @@ function validatePSKSecret(pskSecret) {
  */
 function validatePSKIdentity(pskIdentity) {
   if (pskIdentity.length === 0) {
-    throw new Error('Invalid PSK identity');
+    throw new Error("Invalid PSK identity");
   }
 }
 

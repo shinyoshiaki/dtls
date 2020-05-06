@@ -1,30 +1,30 @@
-'use strict';
+"use strict";
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["type"] }] */
 /* eslint-disable getter-return */
 
-const assert = require('assert');
-const crypto = require('crypto');
-const Emitter = require('events');
-const { encode, BinaryStream } = require('binary-data');
+const assert = require("assert");
+const crypto = require("crypto");
+const Emitter = require("events");
+const { encode, BinaryStream } = require("binary-data");
 const {
   protocolVersion,
   signTypes,
   sessionType,
   kxTypes,
   defaultCipherSuites,
-} = require('lib/constants');
+} = require("../lib/constants");
 const {
   createMasterSecret,
   createPreMasterSecret,
   createExtendedMasterSecret,
   createPSKPreMasterSecret,
-} = require('session/utils');
-const NullCipher = require('cipher/null');
-const debug = require('utils/debug')('dtls:session');
-const { Handshake } = require('lib/protocol');
-const SlidingWindow = require('lib/sliding-window');
-const nacl =require("tweetnacl")
+} = require("./utils");
+const NullCipher = require("../cipher/null");
+const debug = require("../utils/debug")("dtls:session");
+const { Handshake } = require("../lib/protocol");
+const SlidingWindow = require("../lib/sliding-window");
+const nacl = require("tweetnacl");
 
 /**
  * This class implements abstract DTLS session.
@@ -97,7 +97,7 @@ module.exports = class AbstractSession extends Emitter {
    * @param {number} type Message type to send.
    */
   send(type) {
-    this.emit('send', type);
+    this.emit("send", type);
   }
 
   /**
@@ -105,7 +105,7 @@ module.exports = class AbstractSession extends Emitter {
    * @param {Buffer} data
    */
   sendMessage(data) {
-    this.emit('send:appdata', data);
+    this.emit("send:appdata", data);
   }
 
   /**
@@ -114,15 +114,15 @@ module.exports = class AbstractSession extends Emitter {
    * @param {number} level
    */
   sendAlert(description, level) {
-    this.emit('send:alert', description, level);
+    this.emit("send:alert", description, level);
   }
 
   /**
    * Handles starting handshake.
    */
   startHandshake() {
-    debug('start handshake');
-    this.emit('handshake:start');
+    debug("start handshake");
+    this.emit("handshake:start");
 
     this.isHandshakeInProcess = true;
     this.lastRvHandshake = -1;
@@ -133,7 +133,7 @@ module.exports = class AbstractSession extends Emitter {
    * Handshake successfully ends.
    */
   finishHandshake() {
-    debug('stop handshake');
+    debug("stop handshake");
     this.isHandshakeInProcess = false;
     this.handshakeProtocolReaderState = null;
     this.peerEllipticPublicKey = null;
@@ -141,7 +141,7 @@ module.exports = class AbstractSession extends Emitter {
     this.ecdhe = null;
     this.resetHandshakeQueue();
 
-    this.emit('handshake:finish');
+    this.emit("handshake:finish");
   }
 
   /**
@@ -149,7 +149,7 @@ module.exports = class AbstractSession extends Emitter {
    * @param {number} type Alert description type.
    */
   error(type) {
-    this.emit('error', type);
+    this.emit("error", type);
   }
 
   /**
@@ -158,7 +158,7 @@ module.exports = class AbstractSession extends Emitter {
    */
   certificate(cert) {
     this.serverCertificate = cert;
-    this.emit('certificate', cert);
+    this.emit("certificate", cert);
   }
 
   /**
@@ -166,9 +166,13 @@ module.exports = class AbstractSession extends Emitter {
    * @param {Function} done
    */
   createPreMasterSecret(done) {
-  if (this.nextCipher.kx.signType === signTypes.ECDHE) {
-
-      this.clientPremaster = Buffer.from(nacl.scalarMult(Buffer.from(this.ecdhe.secretKey.buffer),this.peerEllipticPublicKey))      
+    if (this.nextCipher.kx.signType === signTypes.ECDHE) {
+      this.clientPremaster = Buffer.from(
+        nacl.scalarMult(
+          Buffer.from(this.ecdhe.secretKey.buffer),
+          this.peerEllipticPublicKey
+        )
+      );
       process.nextTick(done);
     }
   }
@@ -225,7 +229,7 @@ module.exports = class AbstractSession extends Emitter {
    */
   nextEpochServer() {
     this.serverEpoch += 1;
-    assert(this.clientEpoch === this.serverEpoch, 'mismatch epoches');
+    assert(this.clientEpoch === this.serverEpoch, "mismatch epoches");
   }
 
   /**
@@ -268,7 +272,7 @@ module.exports = class AbstractSession extends Emitter {
       packet = encode(packet, Handshake).buffer; // eslint-disable-line no-param-reassign
     }
 
-    debug('packet added to handshake queue, type = %s', packet.readUInt8(0));
+    debug("packet added to handshake queue, type = %s", packet.readUInt8(0));
     this.handshakeQueue.append(packet);
   }
 
@@ -276,7 +280,7 @@ module.exports = class AbstractSession extends Emitter {
    * Sometimes we need to clear queue. Just re-create queue for this.
    */
   resetHandshakeQueue() {
-    debug('reset handshake queue');
+    debug("reset handshake queue");
     this.handshakeQueue = new BinaryStream();
   }
 
@@ -310,7 +314,7 @@ module.exports = class AbstractSession extends Emitter {
    * @param {Buffer} data
    */
   packet(data) {
-    this.emit('data', data);
+    this.emit("data", data);
   }
 };
 
@@ -318,5 +322,5 @@ module.exports = class AbstractSession extends Emitter {
  * Fallback for abstract methods.
  */
 function notImplemented() {
-  throw new Error('not implemented');
+  throw new Error("not implemented");
 }

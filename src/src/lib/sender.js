@@ -1,8 +1,8 @@
-'use strict';
+"use strict";
 
-const { Readable } = require('readable-stream');
-const debug = require('utils/debug')('dtls:sender');
-const { createEncode, encode, BinaryStream ,types} = require('binary-data');
+const { Readable } = require("readable-stream");
+const debug = require("../utils/debug")("dtls:sender");
+const { createEncode, encode, BinaryStream, types } = require("binary-data");
 const {
   contentType,
   handshakeType,
@@ -12,7 +12,7 @@ const {
   kxTypes,
   signTypes,
   keyTypes,
-} = require('lib/constants');
+} = require("./constants");
 const {
   Alert,
   ALPNProtocolNameList,
@@ -25,12 +25,12 @@ const {
   ECPublicKey,
   DigitallySigned,
   ServerPSKIdentityHint,
-} = require('lib/protocol');
-const { encryptPreMasterSecret } = require('session/utils');
-const { constants: states, getProtocol } = require('fsm/states');
+} = require("./protocol");
+const { encryptPreMasterSecret } = require("../session/utils");
+const { constants: states, getProtocol } = require("../fsm/states");
 const {
   states: { SENDING },
-} = require('fsm/retransmitter');
+} = require("../fsm/retransmitter");
 
 const changeCipherSpecMessage = Buffer.alloc(1, 1);
 const defaultCompressionMethods = [compressionMethod.NULL];
@@ -64,20 +64,20 @@ const ecPointFormatExtension = Buffer.from([
 const DTLS_RECORD_SIZE = 13;
 const DTLS_HANDSHAKE_SIZE = 12;
 
-const _output = Symbol('_output');
-const _session = Symbol('_session');
-const _drain = Symbol('_drain');
-const _bufferDrain = Symbol('_buffer_drain');
-const _queue = Symbol('_queue');
-const _nextPacketQueue = Symbol('_next_packet_queue');
-const _clientHello = Symbol('_client_hello');
-const _finished = Symbol('_finished');
-const _certificate = Symbol('_certificate');
-const _changeCipherSpec = Symbol('_change_cipher_spec');
-const _clientKeyExchange = Symbol('_client_key_exchange');
-const _certificateVerify = Symbol('_certificate_verify');
-const _alert = Symbol('_alert');
-const _applicationData = Symbol('_application_data');
+const _output = Symbol("_output");
+const _session = Symbol("_session");
+const _drain = Symbol("_drain");
+const _bufferDrain = Symbol("_buffer_drain");
+const _queue = Symbol("_queue");
+const _nextPacketQueue = Symbol("_next_packet_queue");
+const _clientHello = Symbol("_client_hello");
+const _finished = Symbol("_finished");
+const _certificate = Symbol("_certificate");
+const _changeCipherSpec = Symbol("_change_cipher_spec");
+const _clientKeyExchange = Symbol("_client_key_exchange");
+const _certificateVerify = Symbol("_certificate_verify");
+const _alert = Symbol("_alert");
+const _applicationData = Symbol("_application_data");
 
 const senders = {
   [CLIENT_HELLO]: _clientHello,
@@ -101,26 +101,26 @@ module.exports = class Sender extends Readable {
       handshake: createEncode(Handshake),
     };
 
-    output.alert.on('data', packet => {
+    output.alert.on("data", (packet) => {
       this.sendRecord(packet, contentType.ALERT);
     });
 
-    output.handshake.on('data', packet => {
+    output.handshake.on("data", (packet) => {
       session.retransmitter.append(HANDSHAKE, this.session.clientEpoch, packet);
       this.sendRecord(packet, contentType.HANDSHAKE);
     });
 
-    output.record.on('data', packet => this[_bufferDrain](packet));
+    output.record.on("data", (packet) => this[_bufferDrain](packet));
 
     this[_output] = output;
     this[_session] = session;
     this[_queue] = [];
     this[_nextPacketQueue] = new BinaryStream();
 
-    session.on('send', state => this[senders[state]]());
+    session.on("send", (state) => this[senders[state]]());
 
-    session.on('send:appdata', payload => this[_applicationData](payload));
-    session.on('send:alert', (description, level) =>
+    session.on("send:appdata", (payload) => this[_applicationData](payload));
+    session.on("send:alert", (description, level) =>
       this[_alert](level, description)
     );
 
@@ -128,7 +128,7 @@ module.exports = class Sender extends Readable {
     session.retransmitter.on(SENDING, () => this[_drain]());
 
     // Send stored handshake message again.
-    session.retransmitter.on('data', ({ type, epoch, packet }) =>
+    session.retransmitter.on("data", ({ type, epoch, packet }) =>
       this.sendRecord(packet, getProtocol(type), epoch)
     );
   }
@@ -177,9 +177,9 @@ module.exports = class Sender extends Readable {
         ? this.session.prevCipher
         : this.session.cipher;
 
-      debug('encrypt, cipher = %s', cipher.blockAlgorithm);
+      debug("encrypt, cipher = %s", cipher.blockAlgorithm);
       this.session.encrypt(cipher, record);
-      debug('success');
+      debug("success");
     }
 
     this.output.record.write(record);
@@ -189,7 +189,7 @@ module.exports = class Sender extends Readable {
    * @param {Buffer} message Packet payload.
    * @param {handshakeType} type
    */
-  sendHandshake(message, type,cache=true) {
+  sendHandshake(message, type, cache = true) {
     const { mtu } = this.session;
     const packetLength = this[_nextPacketQueue].length;
 
@@ -219,13 +219,13 @@ module.exports = class Sender extends Readable {
     });
 
     // Store unfragmented handshake message.
-    if(cache)this.session.appendHandshake(createPacket(message),true);
+    if (cache) this.session.appendHandshake(createPacket(message), true);
 
     if (isEnough >= 0) {
       this.output.handshake.write(createPacket(message));
     } else {
       debug(
-        'start handshake fragmentation, remainder = %s bytes, data = %s bytes',
+        "start handshake fragmentation, remainder = %s bytes, data = %s bytes",
         payloadRemainder,
         message.length
       );
@@ -239,7 +239,7 @@ module.exports = class Sender extends Readable {
       offset += payloadRemainder;
       payloadLength -= payloadRemainder;
       debug(
-        'enqueue %s bytes, %s bytes remaind',
+        "enqueue %s bytes, %s bytes remaind",
         payloadRemainder,
         payloadLength
       );
@@ -255,7 +255,7 @@ module.exports = class Sender extends Readable {
         offset += dataLegth;
         payloadLength -= dataLegth;
         debug(
-          'enqueue %s bytes, %s bytes remaind',
+          "enqueue %s bytes, %s bytes remaind",
           dataLegth,
           Math.max(payloadLength, 0)
         );
@@ -269,7 +269,7 @@ module.exports = class Sender extends Readable {
    * @param {number} code
    */
   sendAlert(level, code) {
-    debug('send Alert');
+    debug("send Alert");
 
     const message = {
       level,
@@ -283,7 +283,7 @@ module.exports = class Sender extends Readable {
    * Send `Client Hello` message.
    */
   [_clientHello]() {
-    debug('send Client Hello');
+    debug("send Client Hello");
 
     const clientHello = {
       clientVersion: this.session.version,
@@ -304,28 +304,41 @@ module.exports = class Sender extends Readable {
       data: namedCurvesExtension,
     });
 
-    extensions.push({type:13,data:Buffer.from(encode(
-      [{hash:4, // sha256
-        signature:3 // ecdsa
-      }],
-      types.array(
-      { hash: types.uint8, signature: types.uint8 },
-      types.uint16be,
-      "bytes"
-    )).slice())})
+    extensions.push({
+      type: 13,
+      data: Buffer.from(
+        encode(
+          [
+            {
+              hash: 4, // sha256
+              signature: 3, // ecdsa
+            },
+          ],
+          types.array(
+            { hash: types.uint8, signature: types.uint8 },
+            types.uint16be,
+            "bytes"
+          )
+        ).slice()
+      ),
+    });
 
     if (extensions.length > 0) {
       encode(extensions, output, ExtensionList);
     }
 
-    this.sendHandshake(output.slice(), handshakeType.CLIENT_HELLO,this.session.cookie?true:false);
+    this.sendHandshake(
+      output.slice(),
+      handshakeType.CLIENT_HELLO,
+      this.session.cookie ? true : false
+    );
   }
 
   /**
    * Send `Client Key Exchange` message.
    */
   [_clientKeyExchange]() {
-    debug('send Client Key Exchange');
+    debug("send Client Key Exchange");
 
     const { nextCipher } = this.session;
     const output = createEncode();
@@ -368,7 +381,7 @@ module.exports = class Sender extends Readable {
    * Send `Change Cipher Spec` message.
    */
   [_changeCipherSpec]() {
-    debug('send Change Cipher Spec');
+    debug("send Change Cipher Spec");
 
     this.session.retransmitter.append(
       CHANGE_CIPHER_SPEC,
@@ -382,7 +395,7 @@ module.exports = class Sender extends Readable {
    * Send `Certificate` message.
    */
   [_certificate]() {
-    debug('send client certificate');
+    debug("send client certificate");
 
     const packet = {
       certificateList: [],
@@ -401,7 +414,7 @@ module.exports = class Sender extends Readable {
    * Send `Certificate Verify` message.
    */
   [_certificateVerify]() {
-    debug('send client certificate');
+    debug("send client certificate");
 
     const digitalSignature = {
       algorithm: this.session.clientCertificateSignatureAlgorithm,
@@ -417,7 +430,7 @@ module.exports = class Sender extends Readable {
    * Send `Finished` message.
    */
   [_finished]() {
-    debug('send Finished');
+    debug("send Finished");
 
     this.sendHandshake(this.session.clientFinished, handshakeType.FINISHED);
   }
@@ -457,12 +470,12 @@ module.exports = class Sender extends Readable {
     }
 
     if (this[_queue].length === 0) {
-      debug('empty out queue');
+      debug("empty out queue");
       return;
     }
 
-    debug('drain queue');
-    this[_queue].forEach(packet => this.push(packet));
+    debug("drain queue");
+    this[_queue].forEach((packet) => this.push(packet));
     this[_queue].length = 0;
 
     this.session.retransmitter.wait();
@@ -474,7 +487,7 @@ module.exports = class Sender extends Readable {
    */
   [_bufferDrain](packet) {
     if (this.session.isHandshakeInProcess) {
-      debug('buffer packet');
+      debug("buffer packet");
 
       const { mtu } = this.session;
       const queueLength = this[_nextPacketQueue].length;
@@ -487,7 +500,7 @@ module.exports = class Sender extends Readable {
 
       this[_nextPacketQueue].append(packet);
     } else {
-      debug('send packet');
+      debug("send packet");
       this.push(packet);
     }
   }

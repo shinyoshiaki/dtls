@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-const { connect } = require('lib/socket');
-const { cipherSuites } = require('lib/constants');
+const { connect } = require("./src/lib/socket");
+const { cipherSuites } = require("./src/lib/constants");
 
 module.exports = {
   connect,

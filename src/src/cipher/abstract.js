@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 /* eslint-disable class-methods-use-this */
 
@@ -30,7 +30,7 @@ module.exports = class AbstractCipher {
    * @abstract
    */
   encrypt() {
-    throw new Error('not implemented');
+    throw new Error("not implemented");
   }
 
   /**
@@ -38,7 +38,7 @@ module.exports = class AbstractCipher {
    * @abstract
    */
   decrypt() {
-    throw new Error('not implemented');
+    throw new Error("not implemented");
   }
 
   /**

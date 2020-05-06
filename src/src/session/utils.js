@@ -1,17 +1,17 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
-const crypto = require('crypto');
+const assert = require("assert");
+const crypto = require("crypto");
 const {
   sessionType,
   signatureScheme,
   certificateType,
-} = require('lib/constants');
+} = require("../lib/constants");
 const {
   encode,
   createEncode,
   types: { uint16be, buffer },
-} = require('binary-data');
+} = require("binary-data");
 
 const { RSA_PKCS1_PADDING } = crypto.constants;
 
@@ -90,7 +90,7 @@ function createPSKPreMasterSecret(psk, otherSecret) {
 function createMasterSecret(clientRandom, serverRandom, premaster, cipher) {
   const seed = Buffer.concat([clientRandom, serverRandom]);
 
-  const label = 'master secret';
+  const label = "master secret";
   const masterSecret = cipher.prf(48, premaster, label, seed);
 
   return masterSecret;
@@ -104,7 +104,7 @@ function createMasterSecret(clientRandom, serverRandom, premaster, cipher) {
  */
 function createExtendedMasterSecret(premaster, handshakes, cipher) {
   const sessionHash = hash(cipher.hash, handshakes);
-  const label = 'extended master secret';
+  const label = "extended master secret";
   const masterSecret = cipher.prf(48, premaster, label, sessionHash);
 
   return masterSecret;
@@ -145,10 +145,7 @@ function createFinished(cipher, master, handshakes, label) {
  * @returns {Buffer}
  */
 function hash(algorithm, data) {
-  return crypto
-    .createHash(algorithm)
-    .update(data)
-    .digest();
+  return crypto.createHash(algorithm).update(data).digest();
 }
 
 /**
@@ -162,20 +159,20 @@ function getHashNameBySignAlgo(algorithm) {
     case signatureScheme.rsa_pkcs1_sha256:
     case signatureScheme.rsa_pss_pss_sha256:
     case signatureScheme.rsa_pss_rsae_sha256:
-      return 'sha256';
+      return "sha256";
     case signatureScheme.ecdsa_secp384r1_sha384:
     case signatureScheme.rsa_pkcs1_sha384:
     case signatureScheme.rsa_pss_pss_sha384:
     case signatureScheme.rsa_pss_rsae_sha384:
-      return 'sha384';
+      return "sha384";
     case signatureScheme.ecdsa_secp521r1_sha512:
     case signatureScheme.rsa_pkcs1_sha512:
     case signatureScheme.rsa_pss_pss_sha512:
     case signatureScheme.rsa_pss_rsae_sha512:
-      return 'sha512';
+      return "sha512";
     case signatureScheme.ecdsa_sha1:
     case signatureScheme.rsa_pkcs1_sha1:
-      return 'sha1';
+      return "sha1";
     default:
       break;
   }
@@ -189,15 +186,15 @@ function getHashNameBySignAlgo(algorithm) {
  */
 function getCertificateType(certificate) {
   switch (certificate.publicKey.algo) {
-    case 'ecEncryption':
+    case "ecEncryption":
       return certificateType.ecdsa_sign;
-    case 'rsaEncryption':
+    case "rsaEncryption":
       return certificateType.rsa_sign;
     default:
       break;
   }
 
-  throw new Error('Unknown certificate public key');
+  throw new Error("Unknown certificate public key");
 }
 
 /**
@@ -207,27 +204,27 @@ function getCertificateType(certificate) {
  */
 function getCertificateSignatureAlgorithm(certificate) {
   switch (certificate.signatureAlgorithm) {
-    case 'ecdsaWithSha1':
+    case "ecdsaWithSha1":
       return signatureScheme.ecdsa_sha1;
-    case 'ecdsaWithSha256':
+    case "ecdsaWithSha256":
       return signatureScheme.ecdsa_secp256r1_sha256;
-    case 'ecdsaWithSha384':
+    case "ecdsaWithSha384":
       return signatureScheme.ecdsa_secp384r1_sha384;
-    case 'ecdsaWithSha512':
+    case "ecdsaWithSha512":
       return signatureScheme.ecdsa_secp521r1_sha512;
-    case 'sha512WithRsaEncryption':
+    case "sha512WithRsaEncryption":
       return signatureScheme.rsa_pkcs1_sha512;
-    case 'sha384WithRsaEncryption':
+    case "sha384WithRsaEncryption":
       return signatureScheme.rsa_pkcs1_sha384;
-    case 'sha256WithRsaEncryption':
+    case "sha256WithRsaEncryption":
       return signatureScheme.rsa_pkcs1_sha256;
-    case 'sha1WithRsaEncryption':
+    case "sha1WithRsaEncryption":
       return signatureScheme.rsa_pkcs1_sha1;
     default:
       break;
   }
 
-  throw new Error('Unknown certificate signature algorithm');
+  throw new Error("Unknown certificate signature algorithm");
 }
 
 module.exports = {

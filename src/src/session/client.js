@@ -1,16 +1,16 @@
-'use strict';
+"use strict";
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["type"] }] */
 
-const crypto = require('crypto');
-const AbstractSession = require('session/abstract');
-const { sessionType, randomSize } = require('lib/constants');
+const crypto = require("crypto");
+const AbstractSession = require("./abstract");
+const { sessionType, randomSize } = require("../lib/constants");
 const {
   createRandom,
   createFinished,
   getHashNameBySignAlgo,
-} = require('session/utils');
-const { createRetransmitClient } = require('fsm/retransmitter');
+} = require("./utils");
+const { createRetransmitClient } = require("../fsm/retransmitter");
 
 /**
  * This class implements DTLS client-side session.
@@ -49,7 +49,7 @@ module.exports = class ClientSession extends AbstractSession {
     this.alpnProtocols = [];
 
     // The name of the protocol selected by server
-    this.selectedALPNProtocol = '';
+    this.selectedALPNProtocol = "";
 
     // auth credentials for PSK key exchange
     this.clientPSKIdentity = null;
@@ -87,7 +87,7 @@ module.exports = class ClientSession extends AbstractSession {
       this.cipher,
       this.masterSecret,
       queue,
-      'client finished'
+      "client finished"
     );
   }
 
@@ -101,7 +101,7 @@ module.exports = class ClientSession extends AbstractSession {
       this.cipher,
       this.masterSecret,
       queue,
-      'server finished'
+      "server finished"
     );
   }
 

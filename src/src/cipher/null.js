@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
 /* eslint-disable class-methods-use-this */
 
-const Cipher = require('cipher/abstract');
-const { createNULLKeyExchange } = require('cipher/key-exchange');
+const Cipher = require("../cipher/abstract");
+const { createNULLKeyExchange } = require("../cipher/key-exchange");
 
 /**
  * Default passthrough cipher.
@@ -15,10 +15,10 @@ module.exports = class NullCipher extends Cipher {
   constructor() {
     super();
 
-    this.name = 'NULL_NULL_NULL'; // key, mac, hash
-    this.blockAlgorithm = 'NULL';
+    this.name = "NULL_NULL_NULL"; // key, mac, hash
+    this.blockAlgorithm = "NULL";
     this.kx = createNULLKeyExchange();
-    this.hash = 'NULL';
+    this.hash = "NULL";
   }
 
   /**

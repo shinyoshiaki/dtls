@@ -1,24 +1,24 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
-const Emitter = require('events');
-const debug = require('utils/debug')('dtls:retransmitter');
+const assert = require("assert");
+const Emitter = require("events");
+const debug = require("../utils/debug")("dtls:retransmitter");
 
-const PREPARING = 'preparing';
-const SENDING = 'sending';
-const WAITING = 'waiting';
-const FINISHED = 'finished';
+const PREPARING = "preparing";
+const SENDING = "sending";
+const WAITING = "waiting";
+const FINISHED = "finished";
 
-const _timer = Symbol('_timer');
-const _state = Symbol('_state');
-const _timeout = Symbol('_timeout');
-const _initialTimeout = Symbol('_initial_timeout');
-const _next = Symbol('_next_state');
-const _queue = Symbol('_queue');
-const _onTimeout = Symbol('_on_timeout');
-const _stopTimer = Symbol('_stop_timer');
-const _resetTimer = Symbol('_reset_timer');
-const _tries = Symbol('tries');
+const _timer = Symbol("_timer");
+const _state = Symbol("_state");
+const _timeout = Symbol("_timeout");
+const _initialTimeout = Symbol("_initial_timeout");
+const _next = Symbol("_next_state");
+const _queue = Symbol("_queue");
+const _onTimeout = Symbol("_on_timeout");
+const _stopTimer = Symbol("_stop_timer");
+const _resetTimer = Symbol("_reset_timer");
+const _tries = Symbol("tries");
 
 /**
  * Allowed state transitions.
@@ -56,9 +56,9 @@ class RetransmitMachine extends Emitter {
     const queue = [];
     this[_queue] = queue;
 
-    this.on('timeout', () => {
+    this.on("timeout", () => {
       if (queue.length === 0) {
-        debug('empty queue, ignore');
+        debug("empty queue, ignore");
         return;
       }
 
@@ -66,8 +66,8 @@ class RetransmitMachine extends Emitter {
         return;
       }
 
-      debug('send stored messages again');
-      queue.forEach(item => this.emit('data', item));
+      debug("send stored messages again");
+      queue.forEach((item) => this.emit("data", item));
       this.send();
     });
   }
@@ -126,7 +126,7 @@ class RetransmitMachine extends Emitter {
    */
   append(type, epoch, packet) {
     assert(this.state === PREPARING);
-    debug('save packet');
+    debug("save packet");
 
     this[_queue].push({ type, epoch, packet });
   }
@@ -140,7 +140,7 @@ class RetransmitMachine extends Emitter {
     instance[_tries] += 1;
 
     if (instance[_tries] > instance.maxTries) {
-      debug('got timeout, max tries (%s) is reached, close', instance.maxTries);
+      debug("got timeout, max tries (%s) is reached, close", instance.maxTries);
       instance.close();
       return;
     }
@@ -152,8 +152,8 @@ class RetransmitMachine extends Emitter {
     const time = instance[_timeout] * 2;
     instance[_timeout] = time > 60e3 ? 60e3 : time;
 
-    debug('got timeout, next time is %s ms', time);
-    instance.emit('timeout');
+    debug("got timeout, next time is %s ms", time);
+    instance.emit("timeout");
   }
 
   /**
@@ -169,7 +169,7 @@ class RetransmitMachine extends Emitter {
       `Forbidden transition from ${this.state} to ${state}`
     );
 
-    debug('jump to %s state', state);
+    debug("jump to %s state", state);
     this[_state] = state;
     this.emit(state);
   }
@@ -203,7 +203,7 @@ class RetransmitMachine extends Emitter {
   close() {
     this[_stopTimer]();
 
-    this.emit('close');
+    this.emit("close");
   }
 }
 

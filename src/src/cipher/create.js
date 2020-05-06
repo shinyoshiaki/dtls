@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
 const {
   cipherSuites,
   AEAD_AES_128_GCM,
   AEAD_AES_256_GCM,
-} = require('lib/constants');
-const AEADCipher = require('cipher/aead');
-const Chacha20Poly1305Cipher = require('cipher/chacha20-poly1305');
+} = require("../lib/constants");
+const AEADCipher = require("./aead");
+const Chacha20Poly1305Cipher = require("../cipher/chacha20-poly1305");
 const {
   createRSAKeyExchange,
   createECDHERSAKeyExchange,
   createECDHEECDSAKeyExchange,
   createPSKKeyExchange,
   createECDHEPSKKeyExchange,
-} = require('cipher/key-exchange');
+} = require("../cipher/key-exchange");
 
 module.exports = {
   createCipher,
@@ -35,121 +35,121 @@ function createCipher(cipher) {
     case cipherSuites.TLS_RSA_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
         cipherSuites.TLS_RSA_WITH_AES_128_GCM_SHA256,
-        'TLS_RSA_WITH_AES_128_GCM_SHA256',
-        'aes-128-gcm',
+        "TLS_RSA_WITH_AES_128_GCM_SHA256",
+        "aes-128-gcm",
         RSA_KEY_EXCHANGE,
         AEAD_AES_128_GCM
       );
     case cipherSuites.TLS_RSA_WITH_AES_256_GCM_SHA384:
       return createAEADCipher(
         cipherSuites.TLS_RSA_WITH_AES_256_GCM_SHA384,
-        'TLS_RSA_WITH_AES_256_GCM_SHA384',
-        'aes-256-gcm',
+        "TLS_RSA_WITH_AES_256_GCM_SHA384",
+        "aes-256-gcm",
         RSA_KEY_EXCHANGE,
         AEAD_AES_256_GCM,
-        'sha384'
+        "sha384"
       );
     case cipherSuites.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-        'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256',
-        'aes-128-gcm',
+        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        "aes-128-gcm",
         ECDHE_RSA_KEY_EXCHANGE,
         AEAD_AES_128_GCM
       );
     case cipherSuites.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-        'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384',
-        'aes-256-gcm',
+        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "aes-256-gcm",
         ECDHE_RSA_KEY_EXCHANGE,
         AEAD_AES_256_GCM,
-        'sha384'
+        "sha384"
       );
     case cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-        'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
-        'aes-128-gcm',
+        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "aes-128-gcm",
         ECDHE_ECDSA_KEY_EXCHANGE,
         AEAD_AES_128_GCM
       );
     case cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-        'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
-        'aes-256-gcm',
+        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+        "aes-256-gcm",
         ECDHE_ECDSA_KEY_EXCHANGE,
         AEAD_AES_256_GCM,
-        'sha384'
+        "sha384"
       );
     case cipherSuites.TLS_PSK_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
         cipherSuites.TLS_PSK_WITH_AES_128_GCM_SHA256,
-        'TLS_PSK_WITH_AES_128_GCM_SHA256',
-        'aes-128-gcm',
+        "TLS_PSK_WITH_AES_128_GCM_SHA256",
+        "aes-128-gcm",
         PSK_KEY_EXCHANGE,
         AEAD_AES_128_GCM,
-        'sha256'
+        "sha256"
       );
     case cipherSuites.TLS_PSK_WITH_AES_256_GCM_SHA384:
       return createAEADCipher(
         cipherSuites.TLS_PSK_WITH_AES_256_GCM_SHA384,
-        'TLS_PSK_WITH_AES_256_GCM_SHA384',
-        'aes-256-gcm',
+        "TLS_PSK_WITH_AES_256_GCM_SHA384",
+        "aes-256-gcm",
         PSK_KEY_EXCHANGE,
         AEAD_AES_256_GCM,
-        'sha384'
+        "sha384"
       );
     case cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
       return createChacha20Cipher(
         cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-        'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256',
-        'chacha20-poly1305',
+        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+        "chacha20-poly1305",
         ECDHE_ECDSA_KEY_EXCHANGE,
-        'sha256'
+        "sha256"
       );
     case cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
       return createChacha20Cipher(
         cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-        'TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256',
-        'chacha20-poly1305',
+        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+        "chacha20-poly1305",
         ECDHE_RSA_KEY_EXCHANGE,
-        'sha256'
+        "sha256"
       );
     case cipherSuites.TLS_PSK_WITH_CHACHA20_POLY1305_SHA256:
       return createChacha20Cipher(
         cipherSuites.TLS_PSK_WITH_CHACHA20_POLY1305_SHA256,
-        'TLS_PSK_WITH_CHACHA20_POLY1305_SHA256',
-        'chacha20-poly1305',
+        "TLS_PSK_WITH_CHACHA20_POLY1305_SHA256",
+        "chacha20-poly1305",
         PSK_KEY_EXCHANGE,
-        'sha256'
+        "sha256"
       );
     case cipherSuites.TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256,
-        'TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256',
-        'aes-128-gcm',
+        "TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256",
+        "aes-128-gcm",
         ECDHE_PSK_KEY_EXCHANGE,
         AEAD_AES_128_GCM,
-        'sha256'
+        "sha256"
       );
     case cipherSuites.TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384,
-        'TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384',
-        'aes-256-gcm',
+        "TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384",
+        "aes-256-gcm",
         ECDHE_PSK_KEY_EXCHANGE,
         AEAD_AES_256_GCM,
-        'sha384'
+        "sha384"
       );
     case cipherSuites.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
       return createChacha20Cipher(
         cipherSuites.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
-        'TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256',
-        'chacha20-poly1305',
+        "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+        "chacha20-poly1305",
         ECDHE_PSK_KEY_EXCHANGE,
-        'sha256'
+        "sha256"
       );
     default:
       break;
@@ -167,7 +167,7 @@ function createCipher(cipher) {
  * @param {string} hash
  * @returns {AEADCipher}
  */
-function createAEADCipher(id, name, block, kx, constants, hash = 'sha256') {
+function createAEADCipher(id, name, block, kx, constants, hash = "sha256") {
   const cipher = new AEADCipher();
 
   cipher.id = id;
@@ -198,7 +198,7 @@ function createAEADCipher(id, name, block, kx, constants, hash = 'sha256') {
  * @param {string} hash
  * @returns {AEADCipher}
  */
-function createChacha20Cipher(id, name, block, kx, hash = 'sha256') {
+function createChacha20Cipher(id, name, block, kx, hash = "sha256") {
   const cipher = new Chacha20Poly1305Cipher();
 
   cipher.id = id;

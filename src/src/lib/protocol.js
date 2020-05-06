@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 const {
   types: {
@@ -12,8 +12,8 @@ const {
     select,
     string,
   },
-} = require('binary-data');
-const { ecCurveTypes } = require('lib/constants');
+} = require("binary-data");
+const { ecCurveTypes } = require("./constants");
 
 /**
  * Internal type for trivial errors check.
@@ -51,7 +51,7 @@ const DTLSPlaintextHeader = {
 
 const DTLSPlaintext = {
   ...DTLSPlaintextHeader,
-  fragment: buffer(context => context.current.length),
+  fragment: buffer((context) => context.current.length),
 };
 
 const AlertLevel = uint8;
@@ -94,8 +94,8 @@ const ClientHello = {
   random: Random, // Unixtime + 28 random bytes.,
   sessionId: SessionID,
   cookie: buffer(uint8),
-  cipherSuites: array(CipherSuite, uint16be, 'bytes'),
-  compressionMethods: array(CompressionMethod, uint8, 'bytes'),
+  cipherSuites: array(CipherSuite, uint16be, "bytes"),
+  compressionMethods: array(CompressionMethod, uint8, "bytes"),
 };
 
 const HelloVerifyRequest = {
@@ -110,7 +110,7 @@ const Extension = {
   data: buffer(uint16be),
 };
 
-const ExtensionList = array(Extension, uint16be, 'bytes');
+const ExtensionList = array(Extension, uint16be, "bytes");
 
 const ServerHello = {
   serverVersion: ProtocolVersion,
@@ -123,7 +123,7 @@ const ServerHello = {
 const ASN11Cert = buffer(uint24be);
 
 const Certificate = {
-  certificateList: array(ASN11Cert, uint24be, 'bytes'),
+  certificateList: array(ASN11Cert, uint24be, "bytes"),
 };
 
 const EncryptedPreMasterSecret = buffer(uint16be);
@@ -138,7 +138,7 @@ const AEADAdditionalData = {
 
 const NamedCurve = uint16be;
 
-const NamedCurveList = array(NamedCurve, uint16be, 'bytes');
+const NamedCurveList = array(NamedCurve, uint16be, "bytes");
 
 const SignatureAlgorithm = uint16be;
 
@@ -151,7 +151,7 @@ const ServerECDHParams = {
       ({ current }) => current.curveType === ecCurveTypes.namedCurve,
       NamedCurve
     ),
-    assertType('Invalid curve type')
+    assertType("Invalid curve type")
   ),
   pubkey: ECPublicKey,
 };
@@ -166,13 +166,13 @@ const ClientCertificateType = uint8;
 const DistinguishedName = string(uint16be);
 
 const CertificateRequest = {
-  certificateTypes: array(ClientCertificateType, uint8, 'bytes'),
-  signatures: array(SignatureAlgorithm, uint16be, 'bytes'),
-  authorities: array(DistinguishedName, uint16be, 'bytes'),
+  certificateTypes: array(ClientCertificateType, uint8, "bytes"),
+  signatures: array(SignatureAlgorithm, uint16be, "bytes"),
+  authorities: array(DistinguishedName, uint16be, "bytes"),
 };
 
 const ALPNProtocolName = string(uint8);
-const ALPNProtocolNameList = array(ALPNProtocolName, uint16be, 'bytes');
+const ALPNProtocolNameList = array(ALPNProtocolName, uint16be, "bytes");
 
 // RFC4279, section-2
 const ServerPSKIdentityHint = buffer(uint16be);

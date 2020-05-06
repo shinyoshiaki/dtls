@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const { signTypes, keyTypes, kxTypes } = require('lib/constants');
+const { signTypes, keyTypes, kxTypes } = require("../lib/constants");
 
 module.exports = {
   createRSAKeyExchange,
@@ -42,7 +42,7 @@ function createRSAKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.RSA;
-  exchange.name = 'RSA';
+  exchange.name = "RSA";
 
   exchange.keyType = keyTypes.RSA;
 
@@ -57,7 +57,7 @@ function createECDHERSAKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.ECDHE_RSA;
-  exchange.name = 'ECDHE_RSA';
+  exchange.name = "ECDHE_RSA";
 
   exchange.signType = signTypes.ECDHE;
   exchange.keyType = keyTypes.RSA;
@@ -73,7 +73,7 @@ function createECDHEECDSAKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.ECDHE_ECDSA;
-  exchange.name = 'ECDHE_ECDSA';
+  exchange.name = "ECDHE_ECDSA";
 
   exchange.signType = signTypes.ECDHE;
   exchange.keyType = keyTypes.ECDSA;
@@ -89,7 +89,7 @@ function createNULLKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.NULL;
-  exchange.name = 'NULL';
+  exchange.name = "NULL";
 
   exchange.signType = signTypes.NULL;
   exchange.keyType = keyTypes.NULL;
@@ -105,7 +105,7 @@ function createPSKKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.PSK;
-  exchange.name = 'PSK';
+  exchange.name = "PSK";
 
   exchange.signType = signTypes.NULL;
   exchange.keyType = keyTypes.PSK;
@@ -121,7 +121,7 @@ function createECDHEPSKKeyExchange() {
   const exchange = new KeyExchange();
 
   exchange.id = kxTypes.ECDHE_PSK;
-  exchange.name = 'ECDHE_PSK';
+  exchange.name = "ECDHE_PSK";
 
   exchange.signType = signTypes.ECDHE;
   exchange.keyType = keyTypes.PSK;

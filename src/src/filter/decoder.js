@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
-const { Transform } = require('readable-stream');
-const { decode, createDecode } = require('binary-data');
-const { contentType } = require('lib/constants');
-const { DTLSPlaintext, Handshake } = require('lib/protocol');
-const debug = require('utils/debug')('dtls:decoder');
+const { Transform } = require("readable-stream");
+const { decode, createDecode } = require("binary-data");
+const { contentType } = require("../lib/constants");
+const { DTLSPlaintext, Handshake } = require("../lib/protocol");
+const debug = require("../utils/debug")("dtls:decoder");
 
-const _session = Symbol('_session');
+const _session = Symbol("_session");
 
 /**
  * Decode record and handshake layer messages into objects.
@@ -42,9 +42,9 @@ module.exports = class Decoder extends Transform {
     const stream = createDecode(chunk);
 
     while (stream.length > 0) {
-      debug('process new chunk');
+      debug("process new chunk");
       const record = decode(stream, DTLSPlaintext);
-      debug('decoded %s bytes', decode.bytes);
+      debug("decoded %s bytes", decode.bytes);
 
       const isHandshake = record.type === contentType.HANDSHAKE;
       const isAlert = record.type === contentType.ALERT;
@@ -57,11 +57,11 @@ module.exports = class Decoder extends Transform {
           ? this.session.prevCipher
           : this.session.cipher;
         try {
-          debug('decrypt record layer');
+          debug("decrypt record layer");
           this.session.decrypt(cipher, record);
-          debug('decryption success');
+          debug("decryption success");
         } catch (error) {
-          debug('decryption error, ignore');
+          debug("decryption error, ignore");
         }
       }
 

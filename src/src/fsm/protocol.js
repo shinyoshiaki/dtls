@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
-const crypto = require('crypto');
-const { Writable } = require('readable-stream');
-const { constants: states, createState } = require('fsm/states');
+const assert = require("assert");
+const crypto = require("crypto");
+const { Writable } = require("readable-stream");
+const { constants: states, createState } = require("../fsm/states");
 const {
   contentType,
   alertDescription,
@@ -14,8 +14,8 @@ const {
   namedCurves,
   signatureScheme,
   kxTypes,
-} = require('lib/constants');
-const { decode, createDecode } = require('binary-data');
+} = require("../lib/constants");
+const { decode, createDecode } = require("binary-data");
 const {
   HelloVerifyRequest,
   ServerHello,
@@ -27,16 +27,16 @@ const {
   DigitallySigned,
   CertificateRequest,
   ServerPSKIdentityHint,
-} = require('lib/protocol');
-const debug = require('utils/debug')('dtls:protocol-reader');
-const { createCipher } = require('cipher/create');
-const x509 = require('@fidm/x509');
-const { ASN1 } = require('@fidm/asn1');
+} = require("../lib/protocol");
+const debug = require("../utils/debug")("dtls:protocol-reader");
+const { createCipher } = require("../cipher/create");
+const x509 = require("@fidm/x509");
+const { ASN1 } = require("@fidm/asn1");
 const {
   getHashNameBySignAlgo,
   getCertificateType,
   getCertificateSignatureAlgorithm,
-} = require('session/utils');
+} = require("../session/utils");
 
 const {
   CLIENT_HELLO,
@@ -90,29 +90,29 @@ const transitions = {
   [CLIENT_FINISHED]: new Set([CHANGE_CIPHER_SPEC]),
 };
 
-const _session = Symbol('_session');
-const _message = Symbol('_message');
+const _session = Symbol("_session");
+const _message = Symbol("_message");
 
-const _clientHello = Symbol('_client_hello');
-const _helloVerifyRequest = Symbol('_hello_verify_request');
-const _serverHello = Symbol('_server_hello');
-const _serverHelloExtensions = Symbol('_server_hello_extensions');
-const _serverCertificate = Symbol('_server_certificate');
-const _serverKeyExchange = Symbol('_server_key_exchange');
-const _serverECDHEKeyExchange = Symbol('_server_ecdhe_key_exchange');
-const _serverPSKKeyExchange = Symbol('_server_psk_key_exchange');
-const _serverECDHEPSKKeyExchange = Symbol('_server_ecdhe_psk_key_exchange');
-const _certificateRequest = Symbol('_certificate_request');
-const _serverHelloDone = Symbol('_server_hello_done');
-const _clientCertificate = Symbol('_client_certificate');
-const _clientKeyExchange = Symbol('_client_key_exchange');
-const _certificateVerify = Symbol('_certificate_verify');
-const _clientFinished = Symbol('_client_finished');
-const _clientChangeCipherSpec = Symbol('_client_change_cipher_spec');
-const _serverFinished = Symbol('_server_finished');
-const _serverChangeCipherSpec = Symbol('_server_change_cipher_spec');
-const _alert = Symbol('_alert');
-const _applicationData = Symbol('_application_data');
+const _clientHello = Symbol("_client_hello");
+const _helloVerifyRequest = Symbol("_hello_verify_request");
+const _serverHello = Symbol("_server_hello");
+const _serverHelloExtensions = Symbol("_server_hello_extensions");
+const _serverCertificate = Symbol("_server_certificate");
+const _serverKeyExchange = Symbol("_server_key_exchange");
+const _serverECDHEKeyExchange = Symbol("_server_ecdhe_key_exchange");
+const _serverPSKKeyExchange = Symbol("_server_psk_key_exchange");
+const _serverECDHEPSKKeyExchange = Symbol("_server_ecdhe_psk_key_exchange");
+const _certificateRequest = Symbol("_certificate_request");
+const _serverHelloDone = Symbol("_server_hello_done");
+const _clientCertificate = Symbol("_client_certificate");
+const _clientKeyExchange = Symbol("_client_key_exchange");
+const _certificateVerify = Symbol("_certificate_verify");
+const _clientFinished = Symbol("_client_finished");
+const _clientChangeCipherSpec = Symbol("_client_change_cipher_spec");
+const _serverFinished = Symbol("_server_finished");
+const _serverChangeCipherSpec = Symbol("_server_change_cipher_spec");
+const _alert = Symbol("_alert");
+const _applicationData = Symbol("_application_data");
 
 const handlers = {
   [CLIENT_HELLO]: _clientHello,
@@ -133,12 +133,12 @@ const handlers = {
 
 // Human-readable states for better errors.
 const stateNames = {
-  [CLIENT_CERTIFICATE]: 'CLIENT_CERTIFICATE',
-  [CLIENT_FINISHED]: 'CLIENT_FINISHED',
-  [CLIENT_CHANGE_CIPHER_SPEC]: 'CLIENT_CHANGE_CIPHER_SPEC',
+  [CLIENT_CERTIFICATE]: "CLIENT_CERTIFICATE",
+  [CLIENT_FINISHED]: "CLIENT_FINISHED",
+  [CLIENT_CHANGE_CIPHER_SPEC]: "CLIENT_CHANGE_CIPHER_SPEC",
 };
 
-Object.keys(states).forEach(name => {
+Object.keys(states).forEach((name) => {
   const state = states[name];
   stateNames[state] = name;
 });
@@ -261,7 +261,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_clientHello]() {
-    debug('prepare client hello');
+    debug("prepare client hello");
     this.session.send(this.state);
     this.session.retransmitter.send();
   }
@@ -271,7 +271,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_helloVerifyRequest]() {
-    debug('got hello verify request');
+    debug("got hello verify request");
     this.session.retransmitter.prepare();
 
     const handshake = this.message.fragment;
@@ -285,7 +285,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
       assert(decode.bytes === handshake.body.length);
 
       this.session.cookie = packet.cookie;
-      debug('got cookie %h', packet.cookie);
+      debug("got cookie %h", packet.cookie);
 
       this.next(CLIENT_HELLO);
     } catch (error) {
@@ -299,7 +299,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverHello]() {
-    debug('got server hello');
+    debug("got server hello");
     const handshake = this.message.fragment;
 
     if (handshake.body.length < 38) {
@@ -312,7 +312,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
       const serverHello = decode(istream, ServerHello);
 
       if (serverHello.serverVersion !== this.session.version) {
-        debug('mismatch protocol version');
+        debug("mismatch protocol version");
         this.session.error(alertDescription.PROTOCOL_VERSION);
         return;
       }
@@ -326,11 +326,11 @@ module.exports = class Protocol12ReaderClient extends Writable {
       this.session.id = serverHello.sessionId;
 
       const clientCipher = this.session.cipherSuites.find(
-        cipherSuite => cipherSuite === serverHello.cipherSuite
+        (cipherSuite) => cipherSuite === serverHello.cipherSuite
       );
 
       if (!clientCipher) {
-        debug('server selected unknown cipher %s', serverHello.cipherSuite);
+        debug("server selected unknown cipher %s", serverHello.cipherSuite);
         this.session.error(alertDescription.HANDSHAKE_FAILURE);
         return;
       }
@@ -395,12 +395,12 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverCertificate]() {
-    debug('got server certificate');
+    debug("got server certificate");
     const handshake = this.message.fragment;
 
     // PSK key exchange don't need this message.
     if (this.session.nextCipher.kx.id === kxTypes.PSK) {
-      throw new Error('Invalid message.');
+      throw new Error("Invalid message.");
     }
 
     try {
@@ -436,7 +436,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverKeyExchange]() {
-    debug('got server key exchange');
+    debug("got server key exchange");
     const { nextCipher } = this.session;
 
     const isECDHE = nextCipher.kx.signType === signTypes.ECDHE;
@@ -452,7 +452,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
     } else if (isPSK) {
       this[_serverPSKKeyExchange]();
     } else {
-      throw new Error('Invalid message type.');
+      throw new Error("Invalid message type.");
     }
   }
 
@@ -461,7 +461,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverECDHEKeyExchange]() {
-    debug('process server ECDHE key exchange');
+    debug("process server ECDHE key exchange");
 
     const handshake = this.message.fragment;
     const rstream = createDecode(handshake.body);
@@ -472,11 +472,11 @@ module.exports = class Protocol12ReaderClient extends Writable {
 
     // check curve
     const selectedCurve = supportedCurves.find(
-      curve => namedCurves[curve] === ecdheParams.curve
+      (curve) => namedCurves[curve] === ecdheParams.curve
     );
 
     if (selectedCurve === undefined) {
-      throw new Error('Invalid curve name');
+      throw new Error("Invalid curve name");
     }
 
     // Default sign algo is sha1 for rsa
@@ -507,10 +507,10 @@ module.exports = class Protocol12ReaderClient extends Writable {
     );
 
     if (!isSignValid) {
-      throw new Error('Invalid sign');
+      throw new Error("Invalid sign");
     }
 
-    debug('sign valid');
+    debug("sign valid");
 
     this.session.appendHandshake(handshake);
     this.session.ellipticCurve = selectedCurve;
@@ -523,7 +523,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverPSKKeyExchange]() {
-    debug('process server PSK key exchange');
+    debug("process server PSK key exchange");
 
     const handshake = this.message.fragment;
     const rstream = createDecode(handshake.body);
@@ -547,7 +547,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Process `ServerKeyExchange` message for ECDHE_PSK key exchange.
    */
   [_serverECDHEPSKKeyExchange]() {
-    debug('process server ECDHE PSK key exchange');
+    debug("process server ECDHE PSK key exchange");
 
     const handshake = this.message.fragment;
     const rstream = createDecode(handshake.body);
@@ -561,11 +561,11 @@ module.exports = class Protocol12ReaderClient extends Writable {
 
     // check curve
     const selectedCurve = supportedCurves.find(
-      curve => namedCurves[curve] === ecdheParams.curve
+      (curve) => namedCurves[curve] === ecdheParams.curve
     );
 
     if (selectedCurve === undefined) {
-      throw new Error('Invalid curve name');
+      throw new Error("Invalid curve name");
     }
 
     this.session.appendHandshake(handshake);
@@ -579,13 +579,13 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_certificateRequest]() {
-    debug('got certificate request');
+    debug("got certificate request");
     const handshake = this.message.fragment;
     const { nextCipher } = this.session;
 
     // PSK key exchange don't need this message.
     if (nextCipher.kx.keyType === keyTypes.PSK) {
-      throw new Error('Invalid message.');
+      throw new Error("Invalid message.");
     }
 
     const certificateRequest = decode(handshake.body, CertificateRequest);
@@ -603,7 +603,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverHelloDone]() {
-    debug('got server hello done');
+    debug("got server hello done");
     const handshake = this.message.fragment;
     const nextState = this.session.isCertificateRequested
       ? CLIENT_CERTIFICATE
@@ -611,7 +611,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
 
     this.session.appendHandshake(handshake);
     this.session.createPreMasterSecret(() => {
-      debug('PREMASTER SECRET %h', this.session.clientPremaster);
+      debug("PREMASTER SECRET %h", this.session.clientPremaster);
       this.next(nextState);
     });
   }
@@ -620,7 +620,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_clientCertificate]() {
-    debug('prepare client certificate');
+    debug("prepare client certificate");
 
     this.session.retransmitter.prepare();
 
@@ -633,7 +633,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
       );
 
       if (!isCertificateAllowed) {
-        throw new Error('Disallowed certificate type.');
+        throw new Error("Disallowed certificate type.");
       }
 
       // Any certificates provided by the client MUST be signed using a
@@ -647,7 +647,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
       );
 
       if (!isCertificatSignatureAllowed) {
-        throw new Error('Disallowed certificate signature algorithm.');
+        throw new Error("Disallowed certificate signature algorithm.");
       }
 
       this.session.clientCertificateSignatureAlgorithm = signalgo;
@@ -661,7 +661,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_clientKeyExchange]() {
-    debug('prepare client key exchange');
+    debug("prepare client key exchange");
     const { isCertificateRequested, clientCertificate } = this.session;
 
     if (!isCertificateRequested) {
@@ -671,7 +671,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
     this.session.send(this.state);
 
     this.session.createMasterSecret();
-    debug('MASTER SECRET %h', this.session.masterSecret);
+    debug("MASTER SECRET %h", this.session.masterSecret);
 
     const isCertificateValid =
       isCertificateRequested && clientCertificate !== null;
@@ -686,7 +686,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_certificateVerify]() {
-    debug('prepare certificate verify');
+    debug("prepare certificate verify");
 
     this.session.createSignature();
     this.session.send(CERTIFICATE_VERIFY);
@@ -698,7 +698,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_clientChangeCipherSpec]() {
-    debug('prepare change cipher spec');
+    debug("prepare change cipher spec");
     this.session.send(CHANGE_CIPHER_SPEC);
     this.session.nextEpochClient();
     this.next(CLIENT_FINISHED);
@@ -708,9 +708,9 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_clientFinished]() {
-    debug('prepare client finished');
+    debug("prepare client finished");
     this.session.createClientFinished();
-    debug('client finished %h', this.session.clientFinished);
+    debug("client finished %h", this.session.clientFinished);
 
     this.session.send(FINISHED);
     this.session.retransmitter.send();
@@ -720,7 +720,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverChangeCipherSpec]() {
-    debug('got change cipher spec');
+    debug("got change cipher spec");
     this.session.nextEpochServer();
   }
 
@@ -728,15 +728,15 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_serverFinished]() {
-    debug('got finished');
+    debug("got finished");
     const handshake = this.message.fragment;
-    debug('received server finished %h', handshake.body);
+    debug("received server finished %h", handshake.body);
 
     this.session.createServerFinished();
-    debug('computed server finished %h', this.session.serverFinished);
+    debug("computed server finished %h", this.session.serverFinished);
 
     if (Buffer.compare(handshake.body, this.session.serverFinished) !== 0) {
-      throw new Error('Mismatch server finished messages');
+      throw new Error("Mismatch server finished messages");
     }
 
     this.session.retransmitter.finish();
@@ -748,10 +748,10 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_alert]() {
-    debug('got alert');
+    debug("got alert");
     const packet = this.message.fragment;
     const alert = decode(packet, Alert);
-    debug('level %s, description %s', alert.level, alert.description);
+    debug("level %s, description %s", alert.level, alert.description);
 
     this.session.error(alert.description);
   }
@@ -761,10 +761,10 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    */
   [_applicationData]() {
-    debug('got application data');
+    debug("got application data");
 
     const appdata = this.message.fragment;
-    debug('packet: %h', appdata);
+    debug("packet: %h", appdata);
 
     this.session.packet(appdata);
   }

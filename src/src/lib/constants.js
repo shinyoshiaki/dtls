@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const isChachaSupported = require('is-chacha20-poly1305-supported');
+const isChachaSupported = require("is-chacha20-poly1305-supported");
 
 /**
  * Alert protocol.

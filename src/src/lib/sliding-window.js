@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-const debug = require('utils/debug')('dtls:window');
+const debug = require("../utils/debug")("dtls:window");
 
-const _step = Symbol('_step');
-const _left = Symbol('_left');
-const _right = Symbol('_right');
+const _step = Symbol("_step");
+const _left = Symbol("_left");
+const _right = Symbol("_right");
 
 /**
  * Record layer anti-replay protection.
@@ -75,7 +75,7 @@ module.exports = class SlidingWindow {
    * Resets internals state of edges.
    */
   reset() {
-    debug('reset sliding window');
+    debug("reset sliding window");
 
     this[_left] = 0;
     this[_right] = this[_step];

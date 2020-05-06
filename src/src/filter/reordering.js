@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
-const { Transform } = require('readable-stream');
-const sorter = require('sorted-array-functions');
-const { contentType } = require('lib/constants');
-const debug = require('utils/debug')('dtls:reorder');
+const { Transform } = require("readable-stream");
+const sorter = require("sorted-array-functions");
+const { contentType } = require("../lib/constants");
+const debug = require("../utils/debug")("dtls:reorder");
 
-const _session = Symbol('_session');
-const _queue = Symbol('_queue');
+const _session = Symbol("_session");
+const _queue = Symbol("_queue");
 
 /**
  * Insert comparator for ordered records queue.
@@ -33,7 +33,7 @@ module.exports = class Reordering extends Transform {
     this[_queue] = [];
 
     // 3.2
-    session.retransmitter.on('timeout', () => {
+    session.retransmitter.on("timeout", () => {
       this[_queue].length = 0;
     });
   }
@@ -86,7 +86,7 @@ module.exports = class Reordering extends Transform {
     // 1
     if (this.session.peerEpoch !== record.epoch) {
       debug(
-        'mismatch epoch: got %s, expected %s',
+        "mismatch epoch: got %s, expected %s",
         record.epoch,
         this.session.peerEpoch
       );
@@ -98,7 +98,7 @@ module.exports = class Reordering extends Transform {
     if (!this.session.window.check(record.sequenceNumber)) {
       const seq = record.sequenceNumber;
 
-      debug('record layer replay probably, seq = %s', seq, this.session.window);
+      debug("record layer replay probably, seq = %s", seq, this.session.window);
       callback();
       return;
     }
@@ -108,19 +108,19 @@ module.exports = class Reordering extends Transform {
       if (isHandshake) {
         // 3.1
         if (isReplay) {
-          debug('handshake replay detected, drop');
+          debug("handshake replay detected, drop");
           callback();
           return;
         }
 
         // 3.3
         if (expectedHandshake === record.fragment.sequence) {
-          debug('success, matched handshake seq number');
+          debug("success, matched handshake seq number");
           this.push(record);
         }
         // 3.4
         else if (expectedHandshake < record.fragment.sequence) {
-          debug('save record to the queue, waiting for next packet');
+          debug("save record to the queue, waiting for next packet");
           sorter.add(this[_queue], record, comparator);
         }
 
@@ -147,14 +147,14 @@ module.exports = class Reordering extends Transform {
       // 4
       else {
         // !isHandshake
-        debug('success, got message type = %s', record.type);
+        debug("success, got message type = %s", record.type);
         this.push(record);
       }
     }
     // 5
     else {
       // !this.session.isHandshakeInProcess
-      debug('success');
+      debug("success");
       this.push(record);
     }
 
