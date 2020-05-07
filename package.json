@@ -48,13 +48,12 @@
     "readable-stream": "^3.0.6",
     "sorted-array-functions": "^1.2.0",
     "streamfilter": "^3.0.0",
+    "tweetnacl": "^1.0.3",
     "unicast": "^1.2.0"
   },
   "devDependencies": {
-    "@nodertc/eslint-config": "^0.2.1",
-    "eslint": "^5.16.0",
     "jest": "^23.6.0",
-    "prettier": "^1.14.3"
+    "prettier": "^2.0.5"
   },
   "jest": {
     "modulePaths": [
@@ -87,47 +86,5 @@
         "utils"
       ]
     }
-  },
-  "eslintConfig": {
-    "extends": "@nodertc",
-    "rules": {
-      "no-underscore-dangle": "off"
-    },
-    "overrides": [
-      {
-        "files": [
-          "test/**/*.js"
-        ],
-        "env": {
-          "jest": true
-        },
-        "settings": {
-          "import/resolver": {
-            "node": {
-              "moduleDirectory": [
-                "node_modules",
-                "src",
-                "src/node_modules"
-              ]
-            }
-          }
-        },
-        "rules": {
-          "require-jsdoc": "off",
-          "security/detect-non-literal-fs-filename": "off",
-          "no-process-exit": "off",
-          "unicorn/no-process-exit": "off"
-        }
-      },
-      {
-        "files": [
-          "example.js"
-        ],
-        "rules": {
-          "no-console": "off",
-          "security/detect-non-literal-fs-filename": "off"
-        }
-      }
-    ]
   }
 }

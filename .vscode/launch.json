@@ -8,16 +8,14 @@
       "type": "node",
       "request": "launch",
       "name": "Debug DTLS",
-      "program": "${workspaceFolder}/start.js"
+      "program": "${workspaceFolder}/client.js"
     },
     {
       "type": "node",
       "request": "launch",
       "name": "Debug DTLS via NPM",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "start"
-      ],
+      "runtimeArgs": ["start"],
       "port": 9229
     }
   ]
