@@ -5,16 +5,15 @@
 import * as nacl from "tweetnacl";
 import assert from "assert";
 import * as crypto from "crypto";
-import { namedCurves } from "../lib/constants";
-const Emitter = require("events");
-const { encode, BinaryStream } = require("binary-data");
-const {
+import {
   protocolVersion,
   signTypes,
   sessionType,
   kxTypes,
   defaultCipherSuites,
-} = require("../lib/constants");
+} from "../lib/constants";
+const Emitter = require("events");
+const { encode, BinaryStream } = require("binary-data");
 const {
   createMasterSecret,
   createPreMasterSecret,
@@ -30,7 +29,8 @@ const SlidingWindow = require("../lib/sliding-window");
  * This class implements abstract DTLS session.
  */
 export default class AbstractSession extends Emitter {
-  private ellipticCurve?: string;
+  cipherSuites = defaultCipherSuites;
+  ellipticCurve?: string;
 
   constructor() {
     super();
@@ -53,9 +53,6 @@ export default class AbstractSession extends Emitter {
     this.cipher = new NullCipher();
     this.nextCipher = null;
     this.prevCipher = null;
-
-    // List of supported cipher cuites.
-    this.cipherSuites = defaultCipherSuites;
 
     this.serverPublicKey = null;
     this.masterSecret = null;
@@ -88,7 +85,7 @@ export default class AbstractSession extends Emitter {
    */
   get type() {
     notImplemented();
-    return;
+    return 0;
   }
 
   /**

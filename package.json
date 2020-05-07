@@ -28,7 +28,8 @@
   "scripts": {
     "format": "prettier --write src/**/*.js",
     "start": "ts-node client.ts",
-    "test": "jest"
+    "test": "jest",
+    "type": "tsc --noEmit -p ."
   },
   "jest": {
     "globals": {

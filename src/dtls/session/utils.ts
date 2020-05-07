@@ -189,9 +189,8 @@ function getHashNameBySignAlgo(algorithm: number) {
     case signatureScheme.rsa_pkcs1_sha1:
       return "sha1";
     default:
-      break;
+      return undefined;
   }
-  return null;
 }
 
 /**

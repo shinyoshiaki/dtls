@@ -3,7 +3,7 @@
 import { Duplex, pipeline } from "readable-stream";
 import { toCipherSuite } from "../utils/cipher-suite";
 import ClientSession from "../session/client";
-const ProtocolReader = require("../fsm/protocol");
+import ProtocolReader from "../fsm/protocol";
 
 const unicast = require("unicast");
 const isDtls = require("is-dtls");
@@ -44,7 +44,7 @@ type Options = Partial<{
 class Socket extends Duplex {
   private session = new ClientSession();
   private queue: any[] = [];
-  private protocol?: any;
+  private protocol = new ProtocolReader(this.session);
   private socket?: any;
   private timeout?: any;
 
@@ -53,7 +53,6 @@ class Socket extends Duplex {
 
     const { socket } = options;
 
-    const protocol = new ProtocolReader(this.session);
     const writer = new Sender(this.session);
     const decoder = new Decoder(this.session);
     const defrag = new Defragmentation();
@@ -148,10 +147,17 @@ class Socket extends Duplex {
     const isdtls = streamfilter(chunkFilter);
 
     pipeline(writer, socket, onerror);
-    pipeline(socket, isdtls, decoder, reorder, defrag, protocol, onerror);
+    pipeline(
+      socket,
+      isdtls,
+      decoder,
+      reorder,
+      defrag,
+      this.protocol as any,
+      onerror
+    );
 
     this.queue = [];
-    this.protocol = protocol;
     this.socket = socket;
     this.timeout = null;
 
@@ -192,12 +198,11 @@ class Socket extends Duplex {
    * @param {Function} [callback]
    */
 
-  connect(callback: any) {
-    if (typeof callback === "function") {
+  connect(callback?: () => void) {
+    if (callback) {
       this.once("connect", callback);
     }
-
-    process.nextTick(() => this.protocol.start());
+    this.protocol.start();
   }
 
   /**

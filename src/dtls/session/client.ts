@@ -1,16 +1,8 @@
-"use strict";
-
-/* eslint class-methods-use-this: ["error", { "exceptMethods": ["type"] }] */
-
 import * as crypto from "crypto";
 import AbstractSession from "./abstract";
-const { sessionType, randomSize } = require("../lib/constants");
-const {
-  createRandom,
-  createFinished,
-  getHashNameBySignAlgo,
-} = require("./utils");
-const { createRetransmitClient } = require("../fsm/retransmitter");
+import { createRandom, createFinished, getHashNameBySignAlgo } from "./utils";
+import { sessionType, randomSize } from "../lib/constants";
+import { createRetransmitClient } from "../fsm/retransmitter";
 
 /**
  * This class implements DTLS client-side session.
@@ -131,7 +123,7 @@ export default class ClientSession extends AbstractSession {
     const handshakeMessages = this.handshakeQueue.slice();
     const hash = getHashNameBySignAlgo(
       this.clientCertificateSignatureAlgorithm
-    );
+    )!;
 
     const signature = crypto.createSign(hash).update(handshakeMessages);
 
