@@ -51,9 +51,9 @@ const namedCurvesExtension = Buffer.from([
   0,
   4, // length in bytes
   0,
-  29, // namedCurveX25519
+  namedCurves.x25519, // namedCurveX25519
   0,
-  23, // namedCurveP256
+  namedCurves.secp256r1, // namedCurveP256
 ]);
 
 const ecPointFormatExtension = Buffer.from([
