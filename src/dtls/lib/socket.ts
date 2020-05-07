@@ -4,12 +4,12 @@ import { Duplex, pipeline } from "readable-stream";
 import { toCipherSuite } from "../utils/cipher-suite";
 import ClientSession from "../session/client";
 import ProtocolReader from "../fsm/protocol";
-
+import Sender from "./sender";
 const unicast = require("unicast");
 const isDtls = require("is-dtls");
 const streamfilter = require("streamfilter");
 const debug = require("../utils/debug")("dtls:socket");
-const Sender = require("./sender");
+
 const Decoder = require("../filter/decoder");
 const Defragmentation = require("../filter/defragmentation");
 const Reordering = require("../filter/reordering");
@@ -146,7 +146,7 @@ class Socket extends Duplex {
     };
     const isdtls = streamfilter(chunkFilter);
 
-    pipeline(writer, socket, onerror);
+    pipeline(writer as any, socket, onerror);
     pipeline(
       socket,
       isdtls,
