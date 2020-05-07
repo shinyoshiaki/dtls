@@ -1,4 +1,4 @@
-"use strict";
+import AbstractSession from "../session/abstract";
 
 const assert = require("assert");
 const crypto = require("crypto");
@@ -90,45 +90,21 @@ const transitions = {
   [CLIENT_FINISHED]: new Set([CHANGE_CIPHER_SPEC]),
 };
 
-const _session = Symbol("_session");
-const _message = Symbol("_message");
-
-const _clientHello = Symbol("_client_hello");
-const _helloVerifyRequest = Symbol("_hello_verify_request");
-const _serverHello = Symbol("_server_hello");
-const _serverHelloExtensions = Symbol("_server_hello_extensions");
-const _serverCertificate = Symbol("_server_certificate");
-const _serverKeyExchange = Symbol("_server_key_exchange");
-const _serverECDHEKeyExchange = Symbol("_server_ecdhe_key_exchange");
-const _serverPSKKeyExchange = Symbol("_server_psk_key_exchange");
-const _serverECDHEPSKKeyExchange = Symbol("_server_ecdhe_psk_key_exchange");
-const _certificateRequest = Symbol("_certificate_request");
-const _serverHelloDone = Symbol("_server_hello_done");
-const _clientCertificate = Symbol("_client_certificate");
-const _clientKeyExchange = Symbol("_client_key_exchange");
-const _certificateVerify = Symbol("_certificate_verify");
-const _clientFinished = Symbol("_client_finished");
-const _clientChangeCipherSpec = Symbol("_client_change_cipher_spec");
-const _serverFinished = Symbol("_server_finished");
-const _serverChangeCipherSpec = Symbol("_server_change_cipher_spec");
-const _alert = Symbol("_alert");
-const _applicationData = Symbol("_application_data");
-
 const handlers = {
-  [CLIENT_HELLO]: _clientHello,
-  [HELLO_VERIFY_REQUEST]: _helloVerifyRequest,
-  [SERVER_HELLO]: _serverHello,
-  [CERTIFICATE]: _serverCertificate,
-  [CERTIFICATE_REQUEST]: _certificateRequest,
-  [SERVER_KEY_EXCHANGE]: _serverKeyExchange,
-  [SERVER_HELLO_DONE]: _serverHelloDone,
-  [CLIENT_CERTIFICATE]: _clientCertificate,
-  [CLIENT_KEY_EXCHANGE]: _clientKeyExchange,
-  [CERTIFICATE_VERIFY]: _certificateVerify,
-  [CLIENT_CHANGE_CIPHER_SPEC]: _clientChangeCipherSpec,
-  [CLIENT_FINISHED]: _clientFinished,
-  [CHANGE_CIPHER_SPEC]: _serverChangeCipherSpec,
-  [FINISHED]: _serverFinished,
+  [CLIENT_HELLO]: "clientHello",
+  [HELLO_VERIFY_REQUEST]: "helloVerifyRequest",
+  [SERVER_HELLO]: "serverHello",
+  [CERTIFICATE]: "serverCertificate",
+  [CERTIFICATE_REQUEST]: "certificateRequest",
+  [SERVER_KEY_EXCHANGE]: "serverKeyExchange",
+  [SERVER_HELLO_DONE]: "serverHelloDone",
+  [CLIENT_CERTIFICATE]: "clientCertificate",
+  [CLIENT_KEY_EXCHANGE]: "clientKeyExchange",
+  [CERTIFICATE_VERIFY]: "certificateVerify",
+  [CLIENT_CHANGE_CIPHER_SPEC]: "clientChangeCipherSpec",
+  [CLIENT_FINISHED]: "clientFinished",
+  [CHANGE_CIPHER_SPEC]: "serverChangeCipherSpec",
+  [FINISHED]: "serverFinished",
 };
 
 // Human-readable states for better errors.
@@ -148,23 +124,17 @@ const supportedCurves = Object.keys(namedCurves);
 /**
  * This class implements DTLS v1.2 protocol using Finite State Mahcine.
  */
-module.exports = class Protocol12ReaderClient extends Writable {
+export default class Protocol12ReaderClient extends (Writable as any) {
+  message?: any;
+
   /**
    * @class Protocol12ReaderClient
    * @param {ClientSession} session
    */
-  constructor(session) {
+  constructor(private session: AbstractSession) {
     super({ objectMode: true, decodeStrings: false });
-    this[_session] = session;
-    this[_message] = null;
-    session.handshakeProtocolReaderState = null;
-  }
 
-  /**
-   * @returns {ClientSession}
-   */
-  get session() {
-    return this[_session];
+    session.handshakeProtocolReaderState = null;
   }
 
   /**
@@ -172,14 +142,6 @@ module.exports = class Protocol12ReaderClient extends Writable {
    */
   get state() {
     return this.session.handshakeProtocolReaderState;
-  }
-
-  /**
-   * Last received message.
-   * @returns {Object|null}
-   */
-  get message() {
-    return this[_message];
   }
 
   /**
@@ -193,10 +155,9 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Switch to the next state.
    * @param {number} state
    */
-  next(state) {
+  next(state: number) {
     if (this.state !== null) {
-      /** @type {Set<number>} */
-      const allowedStates = transitions[this.state];
+      const allowedStates = transitions[this.state]!;
       const from = stateNames[this.state];
       const to = stateNames[state];
 
@@ -216,8 +177,8 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @param {string} encoding
    * @param {Function} callback
    */
-  _write(record, encoding, callback) {
-    this[_message] = record;
+  private _write(record: any, encoding: string, callback: () => void) {
+    this.message = record;
 
     const protocol = record.type;
 
@@ -226,9 +187,9 @@ module.exports = class Protocol12ReaderClient extends Writable {
     const isHandshake = protocol === contentType.HANDSHAKE;
 
     if (isAlert) {
-      this[_alert]();
+      this.alert();
     } else if (!this.session.isHandshakeInProcess && isAppData) {
-      this[_applicationData]();
+      this.applicationData();
     } else {
       const type = isHandshake ? record.fragment.type : 0;
       const state = createState(protocol, type);
@@ -244,23 +205,23 @@ module.exports = class Protocol12ReaderClient extends Writable {
       this.session.window.accept(record.sequenceNumber);
     }
 
-    this[_message] = null;
+    this.message = undefined;
     callback();
   }
 
   /**
    * @private
    */
-  _destroy() {
-    this[_session] = null;
-    this[_message] = null;
+  private _destroy() {
+    this.session = undefined as any;
+    this.message = undefined;
   }
 
   /**
    * Handles `client hello` out message.
    * @private
    */
-  [_clientHello]() {
+  private clientHello() {
     debug("prepare client hello");
     this.session.send(this.state);
     this.session.retransmitter.send();
@@ -270,7 +231,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handles `hello verify request` incoming message.
    * @private
    */
-  [_helloVerifyRequest]() {
+  private helloVerifyRequest() {
     debug("got hello verify request");
     this.session.retransmitter.prepare();
 
@@ -298,7 +259,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handles `server hello` incoming message.
    * @private
    */
-  [_serverHello]() {
+  private serverHello() {
     debug("got server hello");
     const handshake = this.message.fragment;
 
@@ -343,7 +304,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
       if (istream.length > 0) {
         const extensions = decode(istream, ExtensionList);
 
-        this[_serverHelloExtensions](extensions);
+        this.serverHelloExtensions(extensions);
       }
 
       const { extendedMasterSecret, peerExtendedMasterSecret } = this.session;
@@ -370,7 +331,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * @private
    * @param {Array<Object>} extensions
    */
-  [_serverHelloExtensions](extensions) {
+  private serverHelloExtensions(extensions: any[]) {
     for (const extension of extensions) {
       if (extension.type === extensionTypes.EXTENDED_MASTER_SECRET) {
         this.session.peerExtendedMasterSecret = true;
@@ -394,7 +355,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handles `certificate` incoming message.
    * @private
    */
-  [_serverCertificate]() {
+  private serverCertificate() {
     debug("got server certificate");
     const handshake = this.message.fragment;
 
@@ -435,7 +396,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_serverKeyExchange]() {
+  private serverKeyExchange() {
     debug("got server key exchange");
     const { nextCipher } = this.session;
 
@@ -446,11 +407,11 @@ module.exports = class Protocol12ReaderClient extends Writable {
     // Only ECDHE_* and PSK may have this message.
     // eslint-disable-next-line camelcase
     if (isECDHE_PSK) {
-      this[_serverECDHEPSKKeyExchange]();
+      this.serverECDHEPSKKeyExchange();
     } else if (isECDHE) {
-      this[_serverECDHEKeyExchange]();
+      this.serverECDHEKeyExchange();
     } else if (isPSK) {
-      this[_serverPSKKeyExchange]();
+      this.serverPSKKeyExchange();
     } else {
       throw new Error("Invalid message type.");
     }
@@ -460,7 +421,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Process `ServerKeyExchange` message for ECDHE_* key exchange (except ECDHE_PSK).
    * @private
    */
-  [_serverECDHEKeyExchange]() {
+  private serverECDHEKeyExchange() {
     debug("process server ECDHE key exchange");
 
     const handshake = this.message.fragment;
@@ -522,7 +483,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Process `ServerKeyExchange` message for PSK key exchange.
    * @private
    */
-  [_serverPSKKeyExchange]() {
+  private serverPSKKeyExchange() {
     debug("process server PSK key exchange");
 
     const handshake = this.message.fragment;
@@ -546,7 +507,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * Process `ServerKeyExchange` message for ECDHE_PSK key exchange.
    */
-  [_serverECDHEPSKKeyExchange]() {
+  private serverECDHEPSKKeyExchange() {
     debug("process server ECDHE PSK key exchange");
 
     const handshake = this.message.fragment;
@@ -578,7 +539,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handles `certificate request` incoming message.
    * @private
    */
-  [_certificateRequest]() {
+  private certificateRequest() {
     debug("got certificate request");
     const handshake = this.message.fragment;
     const { nextCipher } = this.session;
@@ -602,7 +563,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handles `server hello done` incoming message.
    * @private
    */
-  [_serverHelloDone]() {
+  private serverHelloDone() {
     debug("got server hello done");
     const handshake = this.message.fragment;
     const nextState = this.session.isCertificateRequested
@@ -619,7 +580,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_clientCertificate]() {
+  private clientCertificate() {
     debug("prepare client certificate");
 
     this.session.retransmitter.prepare();
@@ -660,7 +621,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_clientKeyExchange]() {
+  private clientKeyExchange() {
     debug("prepare client key exchange");
     const { isCertificateRequested, clientCertificate } = this.session;
 
@@ -685,7 +646,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_certificateVerify]() {
+  private certificateVerify() {
     debug("prepare certificate verify");
 
     this.session.createSignature();
@@ -697,7 +658,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_clientChangeCipherSpec]() {
+  private clientChangeCipherSpec() {
     debug("prepare change cipher spec");
     this.session.send(CHANGE_CIPHER_SPEC);
     this.session.nextEpochClient();
@@ -707,7 +668,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_clientFinished]() {
+  private clientFinished() {
     debug("prepare client finished");
     this.session.createClientFinished();
     debug("client finished %h", this.session.clientFinished);
@@ -719,7 +680,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_serverChangeCipherSpec]() {
+  private serverChangeCipherSpec() {
     debug("got change cipher spec");
     this.session.nextEpochServer();
   }
@@ -727,7 +688,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
   /**
    * @private
    */
-  [_serverFinished]() {
+  private serverFinished() {
     debug("got finished");
     const handshake = this.message.fragment;
     debug("received server finished %h", handshake.body);
@@ -747,7 +708,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handle incoming `alert` messages.
    * @private
    */
-  [_alert]() {
+  private alert() {
     debug("got alert");
     const packet = this.message.fragment;
     const alert = decode(packet, Alert);
@@ -760,7 +721,7 @@ module.exports = class Protocol12ReaderClient extends Writable {
    * Handle incoming `application data` message.
    * @private
    */
-  [_applicationData]() {
+  private applicationData() {
     debug("got application data");
 
     const appdata = this.message.fragment;
@@ -768,4 +729,4 @@ module.exports = class Protocol12ReaderClient extends Writable {
 
     this.session.packet(appdata);
   }
-};
+}
