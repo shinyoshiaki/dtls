@@ -1,7 +1,7 @@
 import AEADCipher from "./aead";
-const crypto = require("crypto");
-const xor = require("buffer-xor/inplace");
-const { createDecode, encode } = require("binary-data");
+import crypto from "crypto";
+import xor from "buffer-xor/inplace";
+import { createDecode, encode } from "binary-data";
 const { AEAD_CHACHA20_POLY1305 } = require("../lib/constants");
 const debug = require("../utils/debug")("dtls:cipher:aead");
 const { sessionType } = require("../lib/constants");

@@ -1,10 +1,13 @@
+import { createDecode, encode } from "binary-data";
+import * as crypto from "crypto";
+import { phash } from "./utils";
 import Cipher from "./abstract";
-const crypto = require("crypto");
-const { createDecode, encode } = require("binary-data");
-const debug = require("../utils/debug")("dtls:cipher:aead");
-const { sessionType } = require("../lib/constants");
 const { AEADAdditionalData } = require("../lib/protocol");
-const { phash } = require("./utils");
+
+const sessionType = {
+  CLIENT: 1,
+  SERVER: 2,
+};
 
 /**
  * This class implements AEAD cipher family.
@@ -45,14 +48,8 @@ export default class AEADCipher extends Cipher {
     this.clientWriteKey = stream.readBuffer(this.keyLength);
     this.serverWriteKey = stream.readBuffer(this.keyLength);
 
-    debug("CLIENT WRITE KEY %h", this.clientWriteKey);
-    debug("SERVER WRITE KEY %h", this.serverWriteKey);
-
     const clientNonceImplicit = stream.readBuffer(this.ivLength);
     const serverNonceImplicit = stream.readBuffer(this.ivLength);
-
-    debug("CLIENT WRITE IV %h", clientNonceImplicit);
-    debug("SERVER WRITE IV %h", serverNonceImplicit);
 
     this.clientNonce = Buffer.alloc(this.nonceLength, 0);
     this.serverNonce = Buffer.alloc(this.nonceLength, 0);

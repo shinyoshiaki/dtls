@@ -172,6 +172,8 @@ export default class Sender extends (Readable as any) {
     }
 
     this.output.record.write(record);
+    const test = encode(record, DTLSPlaintext).slice();
+    test;
   }
 
   /**
@@ -291,12 +293,12 @@ export default class Sender extends (Readable as any) {
 
     const extensions = [];
 
-    if (this.session.extendedMasterSecret) {
-      extensions.push({
-        type: extensionTypes.EXTENDED_MASTER_SECRET,
-        data: EMPTY_BUFFER,
-      });
-    }
+    // if (this.session.extendedMasterSecret) {
+    //   extensions.push({
+    //     type: extensionTypes.EXTENDED_MASTER_SECRET,
+    //     data: EMPTY_BUFFER,
+    //   });
+    // }
 
     extensions.push({
       type: extensionTypes.ELLIPTIC_CURVES,
@@ -322,22 +324,22 @@ export default class Sender extends (Readable as any) {
       ),
     });
 
-    if (this.session.alpnProtocols.length > 0) {
-      const alpnOutput = encode(
-        this.session.alpnProtocols,
-        ALPNProtocolNameList
-      );
+    // if (this.session.alpnProtocols.length > 0) {
+    //   const alpnOutput = encode(
+    //     this.session.alpnProtocols,
+    //     ALPNProtocolNameList
+    //   );
 
-      extensions.push({
-        type: extensionTypes.APPLICATION_LAYER_PROTOCOL_NEGOTIATION,
-        data: alpnOutput,
-      });
-    }
+    //   extensions.push({
+    //     type: extensionTypes.APPLICATION_LAYER_PROTOCOL_NEGOTIATION,
+    //     data: alpnOutput,
+    //   });
+    // }
 
-    extensions.push({
-      type: extensionTypes.EC_POINT_FORMATS,
-      data: ecPointFormatExtension,
-    });
+    // extensions.push({
+    //   type: extensionTypes.EC_POINT_FORMATS,
+    //   data: ecPointFormatExtension,
+    // });
 
     if (extensions.length > 0) {
       encode(extensions, output, ExtensionList);

@@ -1,11 +1,4 @@
-"use strict";
-
-const crypto = require("crypto");
-
-module.exports = {
-  hmac,
-  phash,
-};
+import * as crypto from "crypto";
 
 /**
  * Culculates HMAC using provided hash.
@@ -43,3 +36,5 @@ function phash(bytes, algorithm, secret, seed) {
 
   return Buffer.concat(bufs, totalLength);
 }
+
+export { hmac, phash };
