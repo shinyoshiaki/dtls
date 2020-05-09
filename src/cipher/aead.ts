@@ -1,7 +1,6 @@
 import * as crypto from "crypto";
 import { phash } from "./utils";
 import Cipher from "./abstract";
-import AbstractSession from "../session/abstract";
 const { createDecode, encode } = require("binary-data");
 const { AEADAdditionalData } = require("../lib/protocol");
 
@@ -43,7 +42,11 @@ export default class AEADCipher extends Cipher {
    * Initialize encryption and decryption parts.
    * @param {Session} session
    */
-  init(session: AbstractSession) {
+  init(session: {
+    masterSecret: Buffer;
+    serverRandom: Buffer;
+    clientRandom: Buffer;
+  }) {
     const size = this.keyLength * 2 + this.ivLength * 2;
     const secret = session.masterSecret;
     const seed = Buffer.concat([session.serverRandom, session.clientRandom]);
@@ -70,7 +73,13 @@ export default class AEADCipher extends Cipher {
    * @param {Object} header Record layer message header.
    * @returns {Buffer}
    */
-  encrypt(session: AbstractSession, data: Buffer, header: Header) {
+  encrypt(
+    session: {
+      type: number;
+    },
+    data: Buffer,
+    header: Header
+  ) {
     const isClient = session.type === sessionType.CLIENT;
     const iv = isClient ? this.clientNonce! : this.serverNonce!;
 
@@ -118,7 +127,7 @@ export default class AEADCipher extends Cipher {
    * @param {Object} header Record layer headers.
    * @returns {Buffer}
    */
-  decrypt(session: AbstractSession, data: Buffer, header: Header) {
+  decrypt(session: { type: number }, data: Buffer, header: Header) {
     const isClient = session.type === sessionType.CLIENT;
     const iv = isClient ? this.serverNonce : this.clientNonce;
     const final = createDecode(data);
