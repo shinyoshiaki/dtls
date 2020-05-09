@@ -1,19 +1,17 @@
-const { signTypes, keyTypes, kxTypes } = require("../lib/constants");
+import { signTypes, keyTypes, kxTypes } from "../lib/constants";
 
 /**
  * This class represent type of key exchange mechanism.
  */
 export class KeyExchange {
+  id = 0;
+  name?: string;
+  signType?: number;
+  keyType?: number;
   /**
    * @class KeyExchange
    */
-  constructor() {
-    this.id = 0;
-    this.name = null;
-
-    this.signType = null;
-    this.keyType = null;
-  }
+  constructor() {}
 
   /**
    * @returns {string}

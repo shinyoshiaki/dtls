@@ -1,8 +1,16 @@
-import { createDecode, encode } from "binary-data";
 import * as crypto from "crypto";
 import { phash } from "./utils";
 import Cipher from "./abstract";
+import AbstractSession from "../session/abstract";
+const { createDecode, encode } = require("binary-data");
 const { AEADAdditionalData } = require("../lib/protocol");
+
+type Header = {
+  epoch: number;
+  sequenceNumber: number;
+  type: number;
+  version: number;
+};
 
 const sessionType = {
   CLIENT: 1,
@@ -13,32 +21,29 @@ const sessionType = {
  * This class implements AEAD cipher family.
  */
 export default class AEADCipher extends Cipher {
-  /**
-   * @class AEADCipher
-   */
+  keyLength = 0;
+  nonceLength = 0;
+  ivLength = 0;
+  authTagLength = 0;
+
+  nonceImplicitLength = 0;
+  nonceExplicitLength = 0;
+
+  clientWriteKey?: Buffer;
+  serverWriteKey?: Buffer;
+
+  clientNonce?: Buffer;
+  serverNonce?: Buffer;
+
   constructor() {
     super();
-
-    this.keyLength = 0;
-    this.nonceLength = 0;
-    this.ivLength = 0;
-    this.authTagLength = 0;
-
-    this.nonceImplicitLength = 0;
-    this.nonceExplicitLength = 0;
-
-    this.clientWriteKey = null;
-    this.serverWriteKey = null;
-
-    this.clientNonce = null;
-    this.serverNonce = null;
   }
 
   /**
    * Initialize encryption and decryption parts.
    * @param {Session} session
    */
-  init(session) {
+  init(session: AbstractSession) {
     const size = this.keyLength * 2 + this.ivLength * 2;
     const secret = session.masterSecret;
     const seed = Buffer.concat([session.serverRandom, session.clientRandom]);
@@ -65,9 +70,9 @@ export default class AEADCipher extends Cipher {
    * @param {Object} header Record layer message header.
    * @returns {Buffer}
    */
-  encrypt(session, data, header) {
+  encrypt(session: AbstractSession, data: Buffer, header: Header) {
     const isClient = session.type === sessionType.CLIENT;
-    const iv = isClient ? this.clientNonce : this.serverNonce;
+    const iv = isClient ? this.clientNonce! : this.serverNonce!;
 
     const writeKey = isClient ? this.clientWriteKey : this.serverWriteKey;
 
@@ -86,9 +91,14 @@ export default class AEADCipher extends Cipher {
 
     const additionalBuffer = encode(additionalData, AEADAdditionalData).slice();
 
-    const cipher = crypto.createCipheriv(this.blockAlgorithm, writeKey, iv, {
-      authTagLength: this.authTagLength,
-    });
+    const cipher = crypto.createCipheriv(
+      this.blockAlgorithm! as any,
+      writeKey!,
+      iv,
+      {
+        authTagLength: this.authTagLength,
+      }
+    );
 
     cipher.setAAD(additionalBuffer, {
       plaintextLength: data.length,
@@ -108,7 +118,7 @@ export default class AEADCipher extends Cipher {
    * @param {Object} header Record layer headers.
    * @returns {Buffer}
    */
-  decrypt(session, data, header) {
+  decrypt(session: AbstractSession, data: Buffer, header: Header) {
     const isClient = session.type === sessionType.CLIENT;
     const iv = isClient ? this.serverNonce : this.clientNonce;
     const final = createDecode(data);
@@ -131,9 +141,9 @@ export default class AEADCipher extends Cipher {
     const additionalBuffer = encode(additionalData, AEADAdditionalData).slice();
 
     const decipher = crypto.createDecipheriv(
-      this.blockAlgorithm,
-      writeKey,
-      iv,
+      this.blockAlgorithm! as any,
+      writeKey!,
+      iv!,
       {
         authTagLength: this.authTagLength,
       }
@@ -160,10 +170,15 @@ export default class AEADCipher extends Cipher {
    * @param {Buffer} seed - Input data.
    * @returns {Buffer}
    */
-  prf(size, secret, label, seed) {
+  prf(size: number, secret: Buffer, label: string, seed: Buffer) {
     const isLabelString = typeof label === "string";
     const name = isLabelString ? Buffer.from(label, "ascii") : label;
 
-    return phash(size, this.hash, secret, Buffer.concat([name, seed]));
+    return phash(
+      size,
+      this.hash!,
+      secret,
+      Buffer.concat([Buffer.from(name), seed])
+    );
   }
 }

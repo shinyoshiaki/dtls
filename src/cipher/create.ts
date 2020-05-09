@@ -1,4 +1,3 @@
-import Chacha20Poly1305Cipher from "./chacha20-poly1305";
 import AEADCipher from "./aead";
 import {
   cipherSuites,
@@ -11,6 +10,7 @@ import {
   createECDHEECDSAKeyExchange,
   createPSKKeyExchange,
   createECDHEPSKKeyExchange,
+  KeyExchange,
 } from "./key-exchange";
 
 const RSA_KEY_EXCHANGE = createRSAKeyExchange();
@@ -24,7 +24,7 @@ const ECDHE_PSK_KEY_EXCHANGE = createECDHEPSKKeyExchange();
  * @param {number} cipher
  * @returns {AEADCipher}
  */
-export function createCipher(cipher) {
+export function createCipher(cipher: number) {
   switch (cipher) {
     case cipherSuites.TLS_RSA_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
@@ -95,30 +95,6 @@ export function createCipher(cipher) {
         AEAD_AES_256_GCM,
         "sha384"
       );
-    case cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:
-      return createChacha20Cipher(
-        cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-        "chacha20-poly1305",
-        ECDHE_ECDSA_KEY_EXCHANGE,
-        "sha256"
-      );
-    case cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
-      return createChacha20Cipher(
-        cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-        "chacha20-poly1305",
-        ECDHE_RSA_KEY_EXCHANGE,
-        "sha256"
-      );
-    case cipherSuites.TLS_PSK_WITH_CHACHA20_POLY1305_SHA256:
-      return createChacha20Cipher(
-        cipherSuites.TLS_PSK_WITH_CHACHA20_POLY1305_SHA256,
-        "TLS_PSK_WITH_CHACHA20_POLY1305_SHA256",
-        "chacha20-poly1305",
-        PSK_KEY_EXCHANGE,
-        "sha256"
-      );
     case cipherSuites.TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(
         cipherSuites.TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256,
@@ -137,14 +113,6 @@ export function createCipher(cipher) {
         AEAD_AES_256_GCM,
         "sha384"
       );
-    case cipherSuites.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256:
-      return createChacha20Cipher(
-        cipherSuites.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256,
-        "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
-        "chacha20-poly1305",
-        ECDHE_PSK_KEY_EXCHANGE,
-        "sha256"
-      );
     default:
       break;
   }
@@ -161,7 +129,14 @@ export function createCipher(cipher) {
  * @param {string} hash
  * @returns {AEADCipher}
  */
-function createAEADCipher(id, name, block, kx, constants, hash = "sha256") {
+function createAEADCipher(
+  id: number,
+  name: string,
+  block: string,
+  kx: KeyExchange,
+  constants: { K_LEN: number; N_MAX: number },
+  hash = "sha256"
+) {
   const cipher = new AEADCipher();
 
   cipher.id = id;
@@ -180,26 +155,6 @@ function createAEADCipher(id, name, block, kx, constants, hash = "sha256") {
   cipher.ivLength = cipher.nonceImplicitLength;
 
   cipher.authTagLength = 16;
-
-  return cipher;
-}
-
-/**
- * @param {number} id An internal id of cipher suite.
- * @param {string} name A valid cipher suite name.
- * @param {string} block A valid nodejs cipher name.
- * @param {KeyExchange} kx Key exchange type.
- * @param {string} hash
- * @returns {AEADCipher}
- */
-function createChacha20Cipher(id, name, block, kx, hash = "sha256") {
-  const cipher = new Chacha20Poly1305Cipher();
-
-  cipher.id = id;
-  cipher.name = name;
-  cipher.blockAlgorithm = block;
-  cipher.kx = kx;
-  cipher.hash = hash;
 
   return cipher;
 }

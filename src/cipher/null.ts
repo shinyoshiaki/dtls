@@ -23,7 +23,7 @@ export default class NullCipher extends Cipher {
    * @param {Buffer} data Content to encryption.
    * @returns {Buffer}
    */
-  encrypt(session, data) {
+  encrypt(session: any, data: Buffer) {
     return data;
   }
 
@@ -33,7 +33,7 @@ export default class NullCipher extends Cipher {
    * @param {Buffer} data Content to encryption.
    * @returns {Buffer}
    */
-  decrypt(session, data) {
+  decrypt(session: any, data: Buffer) {
     return data;
   }
 }

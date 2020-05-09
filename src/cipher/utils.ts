@@ -7,7 +7,7 @@ import * as crypto from "crypto";
  * @param {Buffer} data - Input data.
  * @returns {Buffer}
  */
-function hmac(algorithm, secret, data) {
+function hmac(algorithm: string, secret: Buffer, data: Buffer) {
   const hash = crypto.createHmac(algorithm, secret);
   hash.update(data);
   return hash.digest();
@@ -21,7 +21,7 @@ function hmac(algorithm, secret, data) {
  * @param {Buffer} seed - Input data.
  * @returns {Buffer}
  */
-function phash(bytes, algorithm, secret, seed) {
+function phash(bytes: number, algorithm: string, secret: Buffer, seed: Buffer) {
   const totalLength = bytes;
   const bufs = [];
   let Ai = seed; // A0

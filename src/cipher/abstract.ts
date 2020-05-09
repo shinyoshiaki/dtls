@@ -1,28 +1,27 @@
-export default class AbstractCipher {
-  /**
-   * @class AbstractCipher
-   */
-  constructor() {
-    this.id = 0;
-    this.name = null;
-    this.hash = null;
-    this.verifyDataLength = 12;
+import { KeyExchange } from "./key-exchange";
 
-    this.blockAlgorithm = null;
-    this.kx = null;
-  }
+export default class AbstractCipher {
+  id = 0;
+  name?: string;
+  hash?: string;
+  verifyDataLength = 12;
+
+  blockAlgorithm?: string;
+  kx?: KeyExchange;
+
+  constructor() {}
 
   /**
    * Init cipher.
    * @abstract
    */
-  init() {}
+  init(...args: any) {}
 
   /**
    * Encrypts data.
    * @abstract
    */
-  encrypt() {
+  encrypt(...args: any): Buffer {
     throw new Error("not implemented");
   }
 
@@ -30,7 +29,7 @@ export default class AbstractCipher {
    * Decrypts data.
    * @abstract
    */
-  decrypt() {
+  decrypt(...args: any): Buffer {
     throw new Error("not implemented");
   }
 
