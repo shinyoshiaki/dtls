@@ -1,12 +1,11 @@
 "use strict";
-
+import Chacha20Poly1305Cipher from "./chacha20-poly1305";
 const {
   cipherSuites,
   AEAD_AES_128_GCM,
   AEAD_AES_256_GCM,
 } = require("../lib/constants");
 const AEADCipher = require("./aead");
-const Chacha20Poly1305Cipher = require("./chacha20-poly1305");
 const {
   createRSAKeyExchange,
   createECDHERSAKeyExchange,
@@ -14,10 +13,6 @@ const {
   createPSKKeyExchange,
   createECDHEPSKKeyExchange,
 } = require("./key-exchange");
-
-module.exports = {
-  createCipher,
-};
 
 const RSA_KEY_EXCHANGE = createRSAKeyExchange();
 const ECDHE_RSA_KEY_EXCHANGE = createECDHERSAKeyExchange();
@@ -30,7 +25,7 @@ const ECDHE_PSK_KEY_EXCHANGE = createECDHEPSKKeyExchange();
  * @param {number} cipher
  * @returns {AEADCipher}
  */
-function createCipher(cipher) {
+export function createCipher(cipher) {
   switch (cipher) {
     case cipherSuites.TLS_RSA_WITH_AES_128_GCM_SHA256:
       return createAEADCipher(

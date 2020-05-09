@@ -1,14 +1,10 @@
-"use strict";
-
-/* eslint-disable class-methods-use-this */
-
-const Cipher = require("./abstract");
-const { createNULLKeyExchange } = require("./key-exchange");
+import Cipher from "./abstract";
+import { createNULLKeyExchange } from "./key-exchange";
 
 /**
  * Default passthrough cipher.
  */
-module.exports = class NullCipher extends Cipher {
+export default class NullCipher extends Cipher {
   /**
    * @class NullCipher
    */
@@ -40,4 +36,4 @@ module.exports = class NullCipher extends Cipher {
   decrypt(session, data) {
     return data;
   }
-};
+}

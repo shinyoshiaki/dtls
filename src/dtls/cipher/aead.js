@@ -1,17 +1,15 @@
-"use strict";
-
+import Cipher from "./abstract";
 const crypto = require("crypto");
 const { createDecode, encode } = require("binary-data");
 const debug = require("../utils/debug")("dtls:cipher:aead");
 const { sessionType } = require("../lib/constants");
 const { AEADAdditionalData } = require("../lib/protocol");
 const { phash } = require("./utils");
-const Cipher = require("./abstract");
 
 /**
  * This class implements AEAD cipher family.
  */
-module.exports = class AEADCipher extends Cipher {
+export default class AEADCipher extends Cipher {
   /**
    * @class AEADCipher
    */
@@ -171,4 +169,4 @@ module.exports = class AEADCipher extends Cipher {
 
     return phash(size, this.hash, secret, Buffer.concat([name, seed]));
   }
-};
+}

@@ -1,11 +1,4 @@
-"use strict";
-
-/* eslint-disable class-methods-use-this */
-
-/**
- * This class implements abstract cipher cuite.
- */
-module.exports = class AbstractCipher {
+export default class AbstractCipher {
   /**
    * @class AbstractCipher
    */
@@ -47,4 +40,4 @@ module.exports = class AbstractCipher {
   toString() {
     return this.name;
   }
-};
+}

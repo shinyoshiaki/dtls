@@ -1,5 +1,5 @@
 import AbstractSession from "../session/abstract";
-
+import { createCipher } from "../cipher/create";
 const assert = require("assert");
 const crypto = require("crypto");
 const { Writable } = require("readable-stream");
@@ -29,7 +29,6 @@ const {
   ServerPSKIdentityHint,
 } = require("../lib/protocol");
 const debug = require("../utils/debug")("dtls:protocol-reader");
-const { createCipher } = require("../cipher/create");
 const x509 = require("@fidm/x509");
 const { ASN1 } = require("@fidm/asn1");
 const {
@@ -298,7 +297,7 @@ export default class Protocol12ReaderClient extends (Writable as any) {
 
       const cipher = createCipher(clientCipher);
 
-      debug(`server selected ${cipher.name} cipher`);
+      // debug(`server selected ${cipher.name} cipher`);
       this.session.nextCipher = cipher;
 
       if (istream.length > 0) {

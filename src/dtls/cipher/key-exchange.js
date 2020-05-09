@@ -1,5 +1,3 @@
-"use strict";
-
 const { signTypes, keyTypes, kxTypes } = require("../lib/constants");
 
 /**

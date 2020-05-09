@@ -12,6 +12,7 @@ import {
   kxTypes,
   defaultCipherSuites,
 } from "../lib/constants";
+import NullCipher from "../cipher/null";
 const Emitter = require("events");
 const { encode, BinaryStream } = require("binary-data");
 const {
@@ -20,7 +21,6 @@ const {
   createExtendedMasterSecret,
   createPSKPreMasterSecret,
 } = require("./utils");
-const NullCipher = require("../cipher/null");
 const debug = require("../utils/debug")("dtls:session");
 const { Handshake } = require("../lib/protocol");
 const SlidingWindow = require("../lib/sliding-window");

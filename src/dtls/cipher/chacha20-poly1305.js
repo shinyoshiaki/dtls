@@ -1,9 +1,7 @@
-"use strict";
-
+import AEADCipher from "./aead";
 const crypto = require("crypto");
 const xor = require("buffer-xor/inplace");
 const { createDecode, encode } = require("binary-data");
-const AEADCipher = require("./aead");
 const { AEAD_CHACHA20_POLY1305 } = require("../lib/constants");
 const debug = require("../utils/debug")("dtls:cipher:aead");
 const { sessionType } = require("../lib/constants");
@@ -13,7 +11,7 @@ const { AEADAdditionalData } = require("../lib/protocol");
  * This class implements chacha20-poly1305 cipher which is
  * part of AEAD cipher family.
  */
-module.exports = class Chacha20Poly1305Cipher extends AEADCipher {
+export default class Chacha20Poly1305Cipher extends AEADCipher {
   /**
    * @class Chacha20Poly1305Cipher
    */
@@ -157,4 +155,4 @@ module.exports = class Chacha20Poly1305Cipher extends AEADCipher {
       ? Buffer.concat([headPart, finalPart])
       : headPart;
   }
-};
+}
