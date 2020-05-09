@@ -1,18 +1,17 @@
-"use strict";
 import Chacha20Poly1305Cipher from "./chacha20-poly1305";
-const {
+import AEADCipher from "./aead";
+import {
   cipherSuites,
   AEAD_AES_128_GCM,
   AEAD_AES_256_GCM,
-} = require("../lib/constants");
-const AEADCipher = require("./aead");
-const {
+} from "../lib/constants";
+import {
   createRSAKeyExchange,
   createECDHERSAKeyExchange,
   createECDHEECDSAKeyExchange,
   createPSKKeyExchange,
   createECDHEPSKKeyExchange,
-} = require("./key-exchange");
+} from "./key-exchange";
 
 const RSA_KEY_EXCHANGE = createRSAKeyExchange();
 const ECDHE_RSA_KEY_EXCHANGE = createECDHERSAKeyExchange();

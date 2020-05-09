@@ -74,48 +74,50 @@ const senders = {
 
 export default class Sender extends (Readable as any) {
   _queue: Buffer[] = [];
+  _output = {
+    alert: createEncode(Alert),
+    record: createEncode(DTLSPlaintext),
+    handshake: createEncode(Handshake),
+  };
   /**
    * @param {AbstractSession} session
    */
-  constructor(session: AbstractSession) {
+  constructor(private _session: AbstractSession) {
     super();
 
-    const output = {
-      alert: createEncode(Alert),
-      record: createEncode(DTLSPlaintext),
-      handshake: createEncode(Handshake),
-    };
-
-    output.alert.on("data", (packet: Buffer) => {
+    this._output.alert.on("data", (packet: Buffer) => {
       this.sendRecord(packet, contentType.ALERT);
     });
 
-    output.handshake.on("data", (packet: Buffer) => {
-      session.retransmitter.append(HANDSHAKE, this.session.clientEpoch, packet);
+    this._output.handshake.on("data", (packet: Buffer) => {
+      this.session.retransmitter.append(
+        HANDSHAKE,
+        this.session.clientEpoch,
+        packet
+      );
       this.sendRecord(packet, contentType.HANDSHAKE);
     });
 
-    output.record.on("data", (packet: Buffer) => this._bufferDrain(packet));
-
-    this._output = output;
-    this._session = session;
+    this._output.record.on("data", (packet: Buffer) =>
+      this._bufferDrain(packet)
+    );
 
     this._nextPacketQueue = new BinaryStream();
 
-    session.on("send", (state: number) => this[senders[state]]());
+    this._session.on("send", (state: number) => this[senders[state]]());
 
-    session.on("send:appdata", (payload: Buffer) =>
+    this._session.on("send:appdata", (payload: Buffer) =>
       this._applicationData(payload)
     );
-    session.on("send:alert", (description: number, level: number) =>
+    this._session.on("send:alert", (description: number, level: number) =>
       this._alert(level, description)
     );
 
     // Merge outgoing handshake packets before send.
-    session.retransmitter.on(SENDING, () => this._drain());
+    this._session.retransmitter.on(SENDING, () => this._drain());
 
     // Send stored handshake message again.
-    session.retransmitter.on("data", ({ type, epoch, packet }: any) =>
+    this._session.retransmitter.on("data", ({ type, epoch, packet }: any) =>
       this.sendRecord(packet, getProtocol(type), epoch)
     );
   }
@@ -210,6 +212,8 @@ export default class Sender extends (Readable as any) {
 
     if (isEnough >= 0) {
       this.output.handshake.write(createPacket(message));
+      const test = encode(createPacket(message), Handshake).slice();
+      console;
     } else {
       debug(
         "start handshake fragmentation, remainder = %s bytes, data = %s bytes",
@@ -223,6 +227,7 @@ export default class Sender extends (Readable as any) {
       this.output.handshake.write(
         createPacket(message.slice(0, payloadRemainder))
       );
+      const test = encode(createPacket(message), Handshake).slice();
       offset += payloadRemainder;
       payloadLength -= payloadRemainder;
       debug(
@@ -238,7 +243,7 @@ export default class Sender extends (Readable as any) {
         this.output.handshake.write(
           createPacket(message.slice(offset, offset + dataLegth), offset)
         );
-
+        const test = encode(createPacket(message), Handshake).slice();
         offset += dataLegth;
         payloadLength -= dataLegth;
         debug(

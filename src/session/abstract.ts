@@ -299,7 +299,7 @@ export default class AbstractSession extends Emitter {
    * Store the handshake message for the finished checksum.
    * @param {Buffer} packet Encoded handshake message.
    */
-  appendHandshake(packet: Buffer) {
+  appendHandshake(packet: any) {
     assert(this.isHandshakeInProcess);
 
     if (!Buffer.isBuffer(packet)) {

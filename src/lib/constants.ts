@@ -93,16 +93,16 @@ const cipherSuites = {
 
 const defaultCipherSuites = [
   cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-  cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-  cipherSuites.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-  cipherSuites.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+  // cipherSuites.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+  // cipherSuites.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+  // cipherSuites.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 ];
 
 if (isChachaSupported) {
-  defaultCipherSuites.unshift(
-    cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-    cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-  );
+  // defaultCipherSuites.unshift(
+  //   cipherSuites.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+  //   cipherSuites.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+  // );
 }
 
 const compressionMethod = {
